@@ -25,6 +25,9 @@ JandJ proposes a web application that allows Tenants to quickly organize their t
 
 ### Scalability
 
+Because the process of TOPA matching involves many separate users making requests in a very concentrated amount of time, there is a high likelihood of traffic spikes. The moment a landlord issues a Notice of Intent to Sell, all the residents (potentially hundreds) will try to log on, join the specific building’s portal, upload and download documents, etc. A single server might not have the capacity to handle the sheer volume of requests and memory that each need to be scanned and processed. Additionally the server will need to run a matching algorithm involving all this data which will further increase the load. Lastly, the server cannot afford to fail with these tight deadlines as a restriction. 
+
+
 ### [C4CG](https://www.umass.edu/gateway/article/computing-common-good)
 
 > “C4CG is about integrating values into your work, research, and education. ...It’s about education and research, the two pillars of any college that are going to make lives better not only for the citizens of Massachusetts, but also for the world"
