@@ -1,6 +1,5 @@
-# 426-project-JandJ
-
-### Team name: JandJ
+# 426-project-jandj
+### Team name: jandj
 
 ### Team Roster
 
