@@ -8,6 +8,12 @@
 | jkaros@umass.edu.com | sh34v3          |
 | jjpark@umass.edu     | rainwater75     |
 
+### Project Documentation 
+
+* [Refined Project Description](docs/PROJECT.md)
+* [Initial Service List](docs/SERVICES.md)
+* [Service Level Objectives](docs/SLO.md)
+
 ### Domain Review
 
 The state of Massachusetts very recently passed the Tenant Opportunity to Purchase Act (TOPA). When a landlord decides to sell a multi-family rental building, the tenants living there are given the first opportunity to buy it before it can be sold to an outside private developer or investor. Furthermore Tenants are allowed to pass their "right of first refusal" (RFR) to a local housing authority, a land trust, or an affordable housing non-profit (the assignee). The asignee then buys the building and keeps the current tenants in place.
