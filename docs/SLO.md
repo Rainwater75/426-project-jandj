@@ -2,13 +2,13 @@
 
 In forming our SLOs, a main consideration that occurred was our much increased need for reliability over speed.
 
-## association-service: The association service is a user facing API
+### Latency SLO
 
-- The get_summary endpoint must respond within 10 s at the 99th percentile. It should approximate the following ranges: P99: 5-10s P95: 1s - 3s, P50: ~100ms. It is likely that if the response time exceeds P99, the tenant association administrator will refresh the page or submit another request.
+association-service: The association service is a user facing API. The get_summary endpoint must respond within 10 s at the 99th percentile. It should approximate the following latency ranges: P99: 5-10s P95: 1s - 3s, P50: ~100ms. It is likely that if the response time exceeds P99, the tenant association administrator will refresh the page or submit another request.
 
 liaison-service: The liaison-service is not user facing and therefore does not need to respond as quickly. The assignees search endpoint response thresholds are as follows: PP:4-5 min, PP95: 1 min, P50: 1-5s. Only the tenant board is waiting for a response, so the algorithm can prioritize finding the perfect match. However, if the algorithm somehow stretches for hours, it would cause frustration due to the need to find an assignee.
 
-deadlines-service: this not a user facing service, although it is part of an automated, discontinuous UX. These notifications are meant to inform deadlines that are days away, so delay on the order of many minutes is acceptable. For example, receiving an email that your tenant survey is due 2 days from now at 00:01 is not that much different than receiving it at 00:04. The endpoint response thresholds are akin to a background service: P99: 30-60s, P95:5-10s, P50:1-5s
+deadlines-service: this not a user facing service, although it is part of an automated, discontinuous UX. These notifications are meant to inform deadlines that are days away, so delay on the order of many minutes is acceptable. The notification endpoint response must respond within 10 minutes at the 99th percentile. It should approximate the following latency ranges: P99: 5-10 min, P95:1-3 min, P50:5 - 10s. If the notification endpoint exceeds these thresholds into many hours, deadline information may become inaccurate leading the tenant administrator to be misinformed on how far away the deadline is.
 
 ### Reliability SLO
 
