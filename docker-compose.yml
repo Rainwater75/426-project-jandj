@@ -1,0 +1,8 @@
+services: 
+  liaison-service: 
+    build: ./liaison-service
+    ports: 
+      - "3001:3001"
+    environment:
+      - PORT=3001
+    
