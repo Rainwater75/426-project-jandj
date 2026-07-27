@@ -2,10 +2,11 @@ import express from "express";
 import nodemailer from "nodemailer";
 
 const app = express();
+app.use(express.json());
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
+  port: Number(process.env.SMTP_PORT) || 465,
   secure: process.env.SMTP_SECURE === "true",
   auth: {
     user: process.env.SMTP_USER,
@@ -18,34 +19,23 @@ const email_deadline_digest = async (req, res) => {
     const { admin_email, admin_name, property_name, deadlines } = req.body;
 
     //input validation
-    if (
-      !admin_email ||
-      !property_name ||
-      !Array.isArray(deadlines) ||
-      deadlines.length === 0
-    ) {
+    if (!admin_email || !property_name || !Array.isArray(deadlines) || deadlines.length === 0) {
       return res.status(400).json({
-        error:
-          "Missing required fields: admin_email, property_name, and non-empty deadlines array",
+        error: "Missing required fields: admin_email, property_name, and non-empty deadlines array",
       });
     }
 
-    const sorted_deadlines = [...deadlines].sort(
-      (a, b) => new Date(a.due_date) - new Date(b.due_date),
-    );
+    const sorted_deadlines = [...deadlines].sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
 
     //compose deadline digest
     const deadline_digest_html = sorted_deadlines
       .map((item) => {
-        const formattedDate = new Date(item.due_date).toLocaleDateString(
-          undefined,
-          {
-            weekday: "short",
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          },
-        );
+        const formattedDate = new Date(item.due_date).toLocaleDateString(undefined, {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
 
         return `
           <tr style="border-bottom: 1px solid #e0e0e0;">
@@ -70,7 +60,6 @@ const email_deadline_digest = async (req, res) => {
               <th style="padding: 10px;">Milestone / Action</th>
               <th style="padding: 10px;">Due Date</th>
               <th style="padding: 10px;">Details</th>
-              <th style="padding: 10px;">Link</th>
             </tr>
           </thead>
           <tbody>

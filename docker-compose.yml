@@ -16,7 +16,7 @@ services:
     environment:
       - PORT=3000
       - SMTP_HOST=smtp.gmail.com
-      - SMTP_PORT=587
+      - SMTP_PORT=465
       - SMTP_SECURE=true
       - SMTP_USER=topamatching.noreply@gmail.com
       - SMTP_PASS=jzsd rxwm txve wjdr
