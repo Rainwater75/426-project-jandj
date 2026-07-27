@@ -8,6 +8,10 @@ services:
 
   deadlines-service:
     build: ./deadlines-service
+    ports:
+      - 3002:3002
+    environment:
+      - PORT=3002
 
   email-service:
     build: ./email-service
