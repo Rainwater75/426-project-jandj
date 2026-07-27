@@ -2,11 +2,12 @@ import express from "express";
 import nodemailer from "nodemailer";
 
 const app = express();
+app.use(express.json());
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_SECURE === "true",
+  secure: process.env.SMTP_SECURE === "true", // there was a problem where SMTP_SECURE was initally = true  and you were using port 587 so it was rushing the operation
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -52,6 +53,7 @@ const email_deadline_digest = async (req, res) => {
             <td style="padding: 10px; font-weight: bold;">${item.title}</td>
             <td style="padding: 10px; color: #d9534f; font-weight: bold;">${formattedDate}</td>
             <td style="padding: 10px;">${item.description || "N/A"}</td>
+            <td style="padding: 10px;">${item.link ? `View` : '—'}</td>
           </tr>
         `;
       })
