@@ -3,12 +3,14 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { stringify } from 'querystring';
+import { AssertionError } from "assert/strict";
 
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
 const SIMULATED_LATENCY = process.env.SIMULATED_LATENCY || 1500;
+const EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL || "http://email-service:3000/contact_assignee_candidate";
 
 // ai generated btw
 const MOCK_ASSIGNEES = [
@@ -65,16 +67,44 @@ app.post("/liaison/contact", async (req, res) => {
     // assigneeId: Id of assignee candidate to be contacted, tenantAssociationId: id of the tenant association doing the contacting, message: message to be sent to the assignee
     const { assigneeId, tenantAssociationId, message } = req.body; 
 
+    if (!assigneeId || !tenantAssociationId) {
+        return res.status(400).json({ error: "Missing required fields: assigneeId and tenantAssociationId" });
+    }
+
     // simulate network latency 
     await simulateWork();
 
+    // send to the ambassador which will send the email
+    try{
+        const ambassadorResponse = await fetch("http://email-service:3000/contact_assignee_candidate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ associationId: tenantAssociationId, assigneeId: assigneeId, message: message })
+        });
 
-    return res.status(201).json({
-        success: true,
-        deliveryStatus: "Received",
-        tenantAssociationId: tenantAssociationId,
-        sentAt: new Date().toISOString()
-    });
+        if(!ambassadorResponse.ok){
+            const errorData = await ambassadorResponse.json();
+            throw new Error(errorData.error || "Ambassador rejected request");
+        }
+
+        const ambassadorData = await ambassadorResponse.json();
+
+        return res.status(201).json({
+            success: true,
+            deliveryStatus: "Sent",
+            messageId: ambassadorData.messageId,
+            tenantAssociationId: tenantAssociationId,
+            sentAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error("Liaison service failed to send assignee contact email via ambassador:", error);
+        return res.status(500).json({
+            success: false,
+            error: "failed to send assignee contact email",
+            message: error.message
+        });
+    }
 });
 
 
