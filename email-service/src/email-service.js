@@ -6,31 +6,36 @@ app.use(express.json());
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_SECURE === "true", // there was a problem where SMTP_SECURE was initally = true  and you were using port 587 so it was rushing the operation
+  port: Number(process.env.SMTP_PORT) || 465,
+  secure: process.env.SMTP_SECURE === "true",
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
 });
 
-const compileAndSendEmail = async ({ admin_email, admin_name, property_name, deadlines, custom_message }) => {
-    const sorted_deadlines = [...deadlines].sort(
-      (a, b) => new Date(a.due_date) - new Date(b.due_date),
-    );
+const email_deadline_digest = async (req, res) => {
+  try {
+    const { admin_email, admin_name, property_name, deadlines } = req.body;
+
+    //input validation
+    if (!admin_email || !property_name || !Array.isArray(deadlines) || deadlines.length === 0) {
+      return res.status(400).json({
+        error: "Missing required fields: admin_email, property_name, and non-empty deadlines array",
+      });
+    }
+
+    const sorted_deadlines = [...deadlines].sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
 
     //compose deadline digest
     const deadline_digest_html = sorted_deadlines
       .map((item) => {
-        const formattedDate = new Date(item.due_date).toLocaleDateString(
-          undefined,
-          {
-            weekday: "short",
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          },
-        );
+        const formattedDate = new Date(item.due_date).toLocaleDateString(undefined, {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
 
         return `
           <tr style="border-bottom: 1px solid #e0e0e0;">
@@ -56,7 +61,6 @@ const compileAndSendEmail = async ({ admin_email, admin_name, property_name, dea
               <th style="padding: 10px;">Milestone / Action</th>
               <th style="padding: 10px;">Due Date</th>
               <th style="padding: 10px;">Details</th>
-              <th style="padding: 10px;">Link</th>
             </tr>
           </thead>
           <tbody>
@@ -178,8 +182,8 @@ const compileAndSendEmail = async ({ admin_email, admin_name, property_name, dea
 
 //expected payload
 // {
-//   "admin_email": "admin@gmail.org",
-//   "admin_name": "Alex",
+//   "admin_email": "ilovedonuts@gmail.org",
+//   "admin_name": "Homer Simpson",
 //   "property_name": "742 Evergreen Terrace",
 //   "deadlines": [
 //     {
