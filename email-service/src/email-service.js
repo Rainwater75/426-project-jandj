@@ -110,8 +110,8 @@ const email_deadline_digest = async (req, res) => {
 
 //expected payload
 // {
-//   "admin_email": "admin@gmail.org",
-//   "admin_name": "Alex",
+//   "admin_email": "ilovedonuts@gmail.org",
+//   "admin_name": "Homer Simpson",
 //   "property_name": "742 Evergreen Terrace",
 //   "deadlines": [
 //     {
