@@ -3,6 +3,10 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
+const PORT = process.env.PORT || 3002;
+
+console.log(`environment: \n\tPORT=${PORT}`);
+
 //FOR SIMULATION PURPOSES ----------------------
 /**
  * simulates work
@@ -62,7 +66,6 @@ const ta_admin_digest = async (req, res) => {
 
 app.post("/ta_admin_digest", ta_admin_digest);
 
-const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
   console.log(`deadlines-service listening on port ${PORT}`);
 });

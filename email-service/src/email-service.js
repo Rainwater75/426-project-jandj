@@ -4,16 +4,29 @@ import nodemailer from "nodemailer";
 const app = express();
 app.use(express.json());
 
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_PORT = process.env.SMTP_PORT || 465;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_SECURE = process.env.SMTP_SECURE;
+const PORT = process.env.PORT || 3000;
+const DEFAULT_FROM_EMAIL = process.env.DEFAULT_FROM_EMAIL;
+const DEFAULT_REPLY_TO = process.env.DEFAULT_REPLY_TO;
+
+console.log(
+  `environment: \n\tSMTP_HOST=${SMTP_HOST}\n\tSMTP_PASS=${SMTP_PASS}\n\tSMTP_USER=${SMTP_USER}\n\tSMTP_SECURE=${SMTP_SECURE}\n\tSMTP_PORT=${SMTP_PORT}\n\tPORT=${PORT}\n\tDEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}\n\tDEFAULT_REPLY_TO=${DEFAULT_REPLY_TO}`,
+);
+
 //initialize email client
 //NOTE: gen ai was used to generate example code for use of
 //      nodemailer which was adapted for use in this service
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 465,
-  secure: process.env.SMTP_SECURE === "true",
+  host: SMTP_HOST,
+  port: SMTP_PORT,
+  secure: SMTP_SECURE === "true",
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: SMTP_USER,
+    pass: SMTP_PASS,
   },
 });
 
@@ -166,7 +179,6 @@ app.post("/contact_assignee_candidate", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`email-ambassador running on port ${PORT}`);
 });
