@@ -4,6 +4,9 @@ import nodemailer from "nodemailer";
 const app = express();
 app.use(express.json());
 
+//initialize email client
+//NOTE: gen ai was used to generate example code for use of
+//      nodemailer which was adapted for use in this service
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT) || 465,
@@ -14,37 +17,42 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const compileAndSendEmail = async ({ admin_email, admin_name, property_name, deadlines, custom_message }) => {
-    const sorted_deadlines = [...deadlines].sort(
-      (a, b) => new Date(a.due_date) - new Date(b.due_date),
-    );
+/**
+ * Gathers records needed for TA admin digest and then sends notifications via email-ambassador.
+ * res.body json shape: {success: bool, messageId:String, type:String}
+ * latency SLO: P99 < 8s
+ * reliability SLO: <0.01% error
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
+const compileAndSendDigest = async ({ admin_email, admin_name, property_name, deadlines, custom_message }) => {
+  console.log("sending TA Admin digest...");
+  const sorted_deadlines = [...deadlines].sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
 
-    //compose deadline digest
-    const deadline_digest_html = sorted_deadlines
-      .map((item) => {
-        const formattedDate = new Date(item.due_date).toLocaleDateString(
-          undefined,
-          {
-            weekday: "short",
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          },
-        );
+  //compose deadline digest
+  const deadline_digest_html = sorted_deadlines
+    .map((item) => {
+      const formattedDate = new Date(item.due_date).toLocaleDateString(undefined, {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
 
-        return `
+      return `
           <tr style="border-bottom: 1px solid #e0e0e0;">
             <td style="padding: 10px; font-weight: bold;">${item.title}</td>
             <td style="padding: 10px; color: #d9534f; font-weight: bold;">${formattedDate}</td>
             <td style="padding: 10px;">${item.description || "N/A"}</td>
-            <td style="padding: 10px;">${item.link ? `<a href="${item.link}" style="color: #0275d8;">View</a>` : '—'}</td>
+            <td style="padding: 10px;">${item.link ? `<a href="${item.link}" style="color: #0275d8;">View</a>` : "—"}</td>
           </tr>
         `;
-      })
-      .join("");
+    })
+    .join("");
 
-    //compose email body
-    const email_body = `
+  //compose email body
+  //gen ai was used to generate this HTML template
+  const email_body = `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto;">
         <h2>TOPA Critical Deadlines Digest</h2>
         <p>Hi ${admin_name || "Tenant Admin"},</p>
@@ -72,33 +80,29 @@ const compileAndSendEmail = async ({ admin_email, admin_name, property_name, dea
       </div>
     `;
 
-    return transporter.sendMail({
-      from: process.env.DEFAULT_FROM_EMAIL,
-      to: admin_email,
-      subject: `[TOPA Alert] Upcoming Deadlines Digest for ${property_name}`,
-      html: email_body,
-    });
-}
+  return transporter.sendMail({
+    from: process.env.DEFAULT_FROM_EMAIL,
+    to: admin_email,
+    subject: `[TOPA Alert] Upcoming Deadlines Digest for ${property_name}`,
+    html: email_body,
+  });
+};
 
 app.post("/email_deadline_digest", async (req, res) => {
   try {
     const { admin_email, admin_name, property_name, deadlines } = req.body;
 
-    if (
-      !admin_email ||
-      !property_name ||
-      !Array.isArray(deadlines) ||
-      deadlines.length === 0
-    ) {
+    //input validation
+    if (!admin_email || !property_name || !Array.isArray(deadlines) || deadlines.length === 0) {
       return res.status(400).json({
-        error:
-          "Missing required fields: admin_email, property_name, and non-empty deadlines array",
+        error: "Missing required fields: admin_email, property_name, and non-empty deadlines array",
       });
     }
 
-    const result = await compileAndSendEmail({ admin_email, admin_name, property_name, deadlines });
-    return res.status(200).json({ success: true, messageId: result.messageId, type: "topa_digest_notification" });
+    //compile email HTML and send
+    const result = await compileAndSendDigest({ admin_email, admin_name, property_name, deadlines });
 
+    return res.status(200).json({ success: true, messageId: result.messageId, type: "ta_admin_digest_notification" });
   } catch (error) {
     console.error("TOPA digest notification error:", error);
     res.status(500).json({
@@ -121,7 +125,7 @@ app.post("/contact_assignee_candidate", async (req, res) => {
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // query the database/other services for needed information using associationId and assigneeId
-    const candidate = { admin_email: "assignee@gmail.org", admin_name: "Assignee"};
+    const candidate = { admin_email: "assignee@gmail.org", admin_name: "Assignee" };
     const property = { property_name: "742 Evergreen Terrace" };
     const deadlinesList = [
       {
@@ -142,31 +146,24 @@ app.post("/contact_assignee_candidate", async (req, res) => {
       admin_name: candidate.admin_name,
       property_name: property.property_name,
       deadlines: deadlinesList,
-      custom_message: message || " "
+      custom_message: message || " ",
     });
 
-
-    res.status(200).json({ 
-      success: true, 
-      messageId: result.messageId, 
-      type: "contact_asignee_candidate"
+    res.status(200).json({
+      success: true,
+      messageId: result.messageId,
+      type: "contact_asignee_candidate",
     });
-
   } catch (error) {
     console.error("Assignee candidate routing error:", error);
-    res.status(500).json({ 
-      error: "Failed to send TOPA assignee candidate email", 
-      message: error.message 
+    res.status(500).json({
+      error: "Failed to send TOPA assignee candidate email",
+      message: error.message,
     });
   }
 });
 
-
-
-
-
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Email Ambassador running on port ${PORT}`);
+  console.log(`email-ambassador running on port ${PORT}`);
 });
