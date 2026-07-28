@@ -22,8 +22,8 @@ services:
       - SMTP_HOST=smtp.gmail.com
       - SMTP_PORT=465
       - SMTP_SECURE=true
-      - SMTP_USER=${USER}
+      - SMTP_USER=${GMAIL_DUMMY}
       - SMTP_PASS=${PASS}
-      - DEFAULT_FROM_EMAIL=${USER}
+      - DEFAULT_FROM_EMAIL=${GMAIL_DUMMY}
       - DEFAULT_REPLY_TO=${REPLY}
     restart: always
