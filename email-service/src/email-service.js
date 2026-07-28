@@ -144,7 +144,7 @@ app.post("/contact_assignee_candidate", async (req, res) => {
     ];
 
     // form the email result and send
-    const result = await compileAndSendEmail({
+    const result = await compileAndSendDigest({
       admin_email: candidate.admin_email,
       admin_name: candidate.admin_name,
       property_name: property.property_name,
