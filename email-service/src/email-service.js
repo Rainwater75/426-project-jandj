@@ -17,6 +17,9 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+//TODO:
+// 1. add health check
+
 /**
  * Gathers records needed for TA admin digest and then sends notifications via email-ambassador.
  * res.body json shape: {success: bool, messageId:String, type:String}
