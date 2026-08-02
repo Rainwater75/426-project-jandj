@@ -11,6 +11,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3001;
 const SIMULATED_LATENCY = process.env.SIMULATED_LATENCY || 1500;
 const EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL || "http://email-service:3000/contact_assignee_candidate";
+const REPLICA_ID = process.env.HOSTNAME; 
 
 // ai generated btw
 const MOCK_ASSIGNEES = [
@@ -32,8 +33,8 @@ function simulateWork(latencyMs = SIMULATED_LATENCY) {
 
 
 // returns that the service is healthy 
-app.get("/health", (req, res) => {
-    return res.status(200).json({ status: 'UP', service: 'liaison-service' });
+app.get("/liaison/health", (req, res) => {
+    return res.status(200).json({ status: 'UP', service: 'liaison-service', handledBy: REPLICA_ID });
 });
 
 // endpoint for retreiving compatible asingees that can buy the building on the tenant's behalf 
@@ -56,7 +57,8 @@ app.get("/liaison/match", async (req, res) => {
         query: { zipCode: zipCode, neighborhood: neighborhood },
         matchedCount: MOCK_ASSIGNEES.length, 
         eligibleAssignees: MOCK_ASSIGNEES,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        handledBy: REPLICA_ID
     });
 
 });
@@ -94,7 +96,8 @@ app.post("/liaison/contact", async (req, res) => {
             deliveryStatus: "Sent",
             messageId: ambassadorData.messageId,
             tenantAssociationId: tenantAssociationId,
-            sentAt: new Date().toISOString()
+            sentAt: new Date().toISOString(),
+            handledBy: REPLICA_ID
         });
         
     } catch (error) {
@@ -102,19 +105,20 @@ app.post("/liaison/contact", async (req, res) => {
         return res.status(500).json({
             success: false,
             error: "failed to send assignee contact email",
-            message: error.message
+            message: error.message,
+            handledBy: REPLICA_ID
         });
     }
 });
 
 
 
-app.listen(PORT, () => console.log(`liaison-service listening on port ${PORT}`));
+app.listen(PORT, () => console.log(`liaison-service replica: ${REPLICA_ID} listening on port: ${PORT}`));
 
 
 // tests for match and contact 
 
-//curl "http://localhost:3001/liaison/match?zipCode=02108&neighborhood=Boston"
+//for i in {1..6}; do curl "http://localhost:8080/liaison/match?zipCode=02108&neighborhood=Boston"; echo ""; done
 
 // curl -X POST http://localhost:3001/liaison/contact \
 //   -H "Content-Type: application/json" \
