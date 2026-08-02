@@ -16,10 +16,10 @@ services:
       - SMTP_HOST=smtp.gmail.com
       - SMTP_PORT=465
       - SMTP_SECURE=true
-      - SMTP_USER=topamatching.noreply@gmail.com
-      - SMTP_PASS=jzsd rxwm txve wjdr
-      - DEFAULT_FROM_EMAIL=topamatching.noreply@gmail.com
-      - DEFAULT_REPLY_TO=jkaros@umass.edu
+      - SMTP_USER=${GMAIL_DUMMY}
+      - SMTP_PASS=${PASS}
+      - DEFAULT_FROM_EMAIL=${GMAIL_DUMMY}
+      - DEFAULT_REPLY_TO=${REPLY}
     restart: always
 
   caddy:
