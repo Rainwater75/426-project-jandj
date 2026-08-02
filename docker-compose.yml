@@ -29,13 +29,29 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
     depends_on:
-      - liaison-service
+      - liaison-1
+      - liaison-2
+      - liaison-3
+      
     
-  liaison-service:
+  liaison-1:
     build: ./liaison-service
     environment:
       - PORT=3001
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
       - SIMULATED_LATENCY=1500
-    deploy:
-      replicas: 3
+      - REPLICA_ID=replica-1
+  liaison-2:
+    build: ./liaison-service
+    environment:
+      - PORT=3001
+      - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
+      - SIMULATED_LATENCY=1500
+      - REPLICA_ID=replica-2
+  liaison-3:
+    build: ./liaison-service
+    environment:
+      - PORT=3001
+      - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
+      - SIMULATED_LATENCY=1500
+      - REPLICA_ID=replica-3

@@ -11,7 +11,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3001;
 const SIMULATED_LATENCY = process.env.SIMULATED_LATENCY || 1500;
 const EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL || "http://email-service:3000/contact_assignee_candidate";
-const REPLICA_ID = process.env.HOSTNAME; 
+const REPLICA_ID = process.env.REPLICA_ID; 
 
 // ai generated btw
 const MOCK_ASSIGNEES = [
@@ -118,7 +118,8 @@ app.listen(PORT, () => console.log(`liaison-service replica: ${REPLICA_ID} liste
 
 // tests for match and contact 
 
-//for i in {1..6}; do curl "http://localhost:8080/liaison/match?zipCode=02108&neighborhood=Boston"; echo ""; done
+//for i in {1..6}; do (curl -s -H "Connection: close" "http://localhost:8080/liaison/match?zipCode=02108&neighborhood=Boston"; echo "") & done; wait
+// time (for i in {1..6}; do curl -s -H "Connection: close" "http://localhost:8080/liaison/match?zipCode=02108&neighborhood=Boston" & done; wait)
 
 // curl -X POST http://localhost:3001/liaison/contact \
 //   -H "Content-Type: application/json" \
