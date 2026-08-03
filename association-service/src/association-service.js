@@ -4,7 +4,7 @@ const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
-const REPLICA_ID = process.env.REPLICA_ID;
+const CONTAINER_ID = process.env.CONTAINER_ID;
 
 console.log(`environment: \n\tPORT=${PORT}`);
 
@@ -41,8 +41,6 @@ const example_record = {
       description: "Finalize formal P&S contract with owner attorneys",
     },
   ],
-  // for testing -- remove if it breaks something
-  handledBy: REPLICA_ID
 };
 
 const example_association = {
@@ -91,8 +89,6 @@ const example_association = {
       }
     }
   ],
-  // for testing -- remove if it breaks something
-  handledBy: REPLICA_ID
 }
 
 //--------------------------------------------
@@ -106,13 +102,27 @@ const get_user = async (req, res) => {
   //TODO:
   // 1.
 
-  //console.log(`getting user ${req.query.user_id}...`);
+  if (!req.query.user_id){
+    console.log("[ERROR] bad request, user_id not included");
+    const response = {
+      success: false,
+      err: "[ERROR] bad request, user_id not included"
+    }
+    res.status(400).json(response);
+    return;
+  }
 
-  simulateWork(200);
+  console.log(`getting user ${req.query.user_id}...`);
 
-  const response = example_record;
+  await simulateWork(200);
 
-  res.status(200).json(response);
+  const data = example_record;
+
+  res.status(200).json({
+    respondent: CONTAINER_ID,
+    success: true,
+    record: data
+  });
 };
 
 /** fetches a TA record from the database based on ta_id in query string
@@ -123,17 +133,31 @@ const get_user = async (req, res) => {
 const get_TA = async (req, res) => {
   console.log(`get_TA endpoint hit`);
 
-  //console.log(`getting TA record ${req.query.ta_id}`)
+  if (!req.query.ta_id){
+    console.log("[ERROR] bad request, ta_id not included");
+    const response = {
+      success: false,
+      err: "[ERROR] bad request, ta_id not included"
+    }
+    res.status(400).json(response);
+    return;
+  }
 
-  simulateWork(300);
+  console.log(`getting TA record ${req.query.ta_id}`)
 
-  const response = example_association;
+  await simulateWork(300);
 
-  res.status(200).json(response);
+  const data = example_association;
+
+  res.status(200).json({
+    respondent: CONTAINER_ID,
+    success: true,
+    record: data
+  });
 }
 
 app.get("/health", (req, res) => {
-    return res.status(200).json({ status: 'UP', service: 'association-service', handledBy: REPLICA_ID });
+    return res.status(200).json({ status: 'UP', service: 'association-service', handledBy: CONTAINER_ID });
 });
 
 
