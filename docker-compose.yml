@@ -1,5 +1,4 @@
 services:
-
   deadlines-service:
     build: ./deadlines-service
     ports:
@@ -22,6 +21,26 @@ services:
       - DEFAULT_REPLY_TO=${REPLY}
     restart: always
 
+  caddy-association:
+    image: caddy:2
+    ports:
+      - "3999:3999"
+    volumes:
+      - ./association-service/Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - association-0
+      - association-1
+
+  association-0:
+    build: ./association-service
+    environment:
+      - PORT=4000
+
+  association-1:
+    build: ./association-service
+    environment:
+      - PORT=4001
+
   caddy:
     image: caddy:2
     ports:
@@ -32,8 +51,7 @@ services:
       - liaison-1
       - liaison-2
       - liaison-3
-      
-    
+
   liaison-1:
     build: ./liaison-service
     environment:

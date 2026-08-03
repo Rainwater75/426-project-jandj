@@ -1,8 +1,8 @@
 {
-  "name": "deadlines-service",
+  "name": "association-service",
   "version": "1.0.0",
   "description": "",
-  "main": "./src/deadlines-service.js",
+  "main": "./src/association-service.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
