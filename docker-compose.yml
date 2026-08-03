@@ -29,11 +29,13 @@ services:
       - REDIS_URL=redis://redis:6379
     depends_on:
       - redis
+    ports:
+      - 4000:4000
 
   association-1:
     build: ./association-service
     environment:
-      - PORT=4000
+      - PORT=4001
       - CONTAINER_ID=1
       - REDIS_URL=redis://redis:6379
     depends_on:

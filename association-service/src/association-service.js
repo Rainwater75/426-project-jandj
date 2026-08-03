@@ -107,6 +107,10 @@ const example_association = {
   ],
 }
 
+
+//TODO:
+  // 1. association service permanently hangs when request has bad/malformed query.
+
 //--------------------------------------------
 /** fetches a single user's record from the database based on user_id in query string
  *
@@ -116,10 +120,9 @@ const example_association = {
 const get_user = async (req, res) => {
   const { user_id } = req.query;
   console.log(`get_user endpoint hit`);
-  //TODO:
-  // 1.
 
-  
+
+
   if (!user_id){
     console.log("[ERROR] bad request, user_id not included");
     return res.status(400).json({ success: false, err: "[ERROR] bad request, user_id not included" });
@@ -130,13 +133,13 @@ const get_user = async (req, res) => {
 
     const cachedData = await redisClient.get(cacheKey);
 
-    // if cache hit 
+    // if cache hit
     if (cachedData) {
       console.log(`[CACHE HIT] sending ${user_id} from cache `);
       return res.status(200).json({ respondent: CONTAINER_ID, success: true, record: JSON.parse(cachedData), fromCache: true,});
     }
 
-    // cache miss 
+    // cache miss
     console.log(`[CACHE MISS] getting user ${req.query.user_id}...`);
     await simulateWork(200);
 
@@ -202,5 +205,5 @@ app.get("/get_user", get_user);
 app.get("/get_TA", get_TA);
 
 app.listen(PORT, () => {
-  console.log(`association-service listening on port ${PORT}`);
+  console.log(`association-service-${CONTAINER_ID} listening on port ${PORT}`);
 });
