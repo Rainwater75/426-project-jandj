@@ -6,7 +6,9 @@ In forming our SLOs, a main consideration that occurred was our much increased n
 
 `association-service`: The association service is a user facing API.
 
-- The get_summary endpoint must respond within 10 s at the 99th percentile. It should approximate the following latency ranges: P99: 5-10s P95: 1s - 3s, P50: ~100ms. It is likely that if the response time exceeds P99, the TA administrator will refresh the page or submit another request.
+- The get_user endpoint must respond within 10 s at the 99th percentile. It should approximate the following latency ranges: P99: 5-10s P95: 1s - 3s, P50: ~100ms. It is likely that if the response time exceeds P99, the user will refresh the page or submit another request.
+
+- The get_TA endpoint must respond with 10 s at the 99th percentile.  It should approximate the following latency ranges: P99: 5-10s P95: 1s - 3s, P50: ~100ms. It is likely that if the response time exceeds P99, the TA administrator will refresh the page or submit another request.
 
 `liaison-service`: The liaison-service is not user facing and therefore does not need to respond as quickly.
 
@@ -20,7 +22,11 @@ In forming our SLOs, a main consideration that occurred was our much increased n
 
 `association-service`: This is service will be used by the TA admins to get/modify information about the TA and their matching process. It must have high reliability.
 
-- The initialize_association end point should succeed 99.9% of the time. At-most-once might mean a tenant association isn’t initialized, which would mean the TA admin would need to fill out the relevant forms again, an annoyance that reduces user confidence. At-least-once might mean that duplicate associations are written to the database, which would create data consistency problems if TA data is read/written by name.
+- The initialize_association endpoint should succeed 99.9% of the time. At-most-once might mean a tenant association isn’t initialized, which would mean the TA admin would need to fill out the relevant forms again, an annoyance that reduces user confidence. At-least-once might mean that duplicate associations are written to the database, which would create data consistency problems if TA data is read/written by name.
+
+- The get_user endpoint should succeed 99.0% of the time. As this is a get request that doesn't modify data, at least once delivery is appropriate with repeated requests won't cause any destructive results.
+-
+- The get_TA endpoint should succeed 99.0% of the time. As this is a get request that doesn't modify data, at least once delivery is appropriate with repeated requests won't cause any destructive results.
 
 `liaison-service`:
 
