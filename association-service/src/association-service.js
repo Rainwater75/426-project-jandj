@@ -4,6 +4,7 @@ const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
+const CONTAINER_ID = process.env.CONTAINER_ID || "association-service";
 
 console.log(`environment: \n\tPORT=${PORT}`);
 
@@ -101,13 +102,27 @@ const get_user = async (req, res) => {
   //TODO:
   // 1.
 
-  //console.log(`getting user ${req.query.user_id}...`);
+  if (!req.query.user_id){
+    console.log("[ERROR] bad request, user_id not included");
+    const response = {
+      success: false,
+      err: "[ERROR] bad request, user_id not included"
+    }
+    res.status(400).json(response);
+    return;
+  }
+
+  console.log(`getting user ${req.query.user_id}...`);
 
   simulateWork(200);
 
-  const response = example_record;
+  const data = example_record;
 
-  res.status(200).json(response);
+  res.status(200).json({
+    respondent: CONTAINER_ID,
+    success: true,
+    record: data
+  });
 };
 
 /** fetches a TA record from the database based on ta_id in query string
@@ -118,13 +133,27 @@ const get_user = async (req, res) => {
 const get_TA = async (req, res) => {
   console.log(`get_TA endpoint hit`);
 
-  //console.log(`getting TA record ${req.query.ta_id}`)
+  if (!req.query.ta_id){
+    console.log("[ERROR] bad request, ta_id not included");
+    const response = {
+      success: false,
+      err: "[ERROR] bad request, ta_id not included"
+    }
+    res.status(400).json(response);
+    return;
+  }
+
+  console.log(`getting TA record ${req.query.ta_id}`)
 
   simulateWork(300);
 
-  const response = example_association;
+  const data = example_association;
 
-  res.status(200).json(response);
+  res.status(200).json({
+    respondent: CONTAINER_ID,
+    success: true,
+    record: data
+  });
 }
 
 app.get("/get_user", get_user);
