@@ -1,12 +1,28 @@
 import express from "express";
+import { createClient } from "redis";
 
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
 const CONTAINER_ID = process.env.CONTAINER_ID;
+const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 console.log(`environment: \n\tPORT=${PORT}`);
+
+
+const redisClient = createClient({ url: REDIS_URL });
+
+redisClient.on("error", (err) => console.error("[REDIS ERROR]", err));
+
+await redisClient.connect().then(() => {
+  console.log("Connected to Redis server successfully");
+})
+
+
+
+
+
 
 //FOR SIMULATION PURPOSES ----------------------
 /**
@@ -98,31 +114,47 @@ const example_association = {
  * @param {express.Response} res
  */
 const get_user = async (req, res) => {
+  const { user_id } = req.query;
   console.log(`get_user endpoint hit`);
   //TODO:
   // 1.
 
-  if (!req.query.user_id){
+  
+  if (!user_id){
     console.log("[ERROR] bad request, user_id not included");
-    const response = {
-      success: false,
-      err: "[ERROR] bad request, user_id not included"
-    }
-    res.status(400).json(response);
-    return;
+    return res.status(400).json({ success: false, err: "[ERROR] bad request, user_id not included" });
   }
 
-  console.log(`getting user ${req.query.user_id}...`);
+  try {
+    const cacheKey = `user:${user_id}`;
 
-  await simulateWork(200);
+    const cachedData = await redisClient.get(cacheKey);
 
-  const data = example_record;
+    // if cache hit 
+    if (cachedData) {
+      console.log(`[CACHE HIT] sending ${user_id} from cache `);
+      return res.status(200).json({ respondent: CONTAINER_ID, success: true, record: JSON.parse(cachedData), fromCache: true,});
+    }
 
-  res.status(200).json({
-    respondent: CONTAINER_ID,
-    success: true,
-    record: data
-  });
+    // cache miss 
+    console.log(`[CACHE MISS] getting user ${req.query.user_id}...`);
+    await simulateWork(200);
+
+    const data = example_record;
+
+    // set data to the cache with a 60 second expiration
+    await redisClient.set(cacheKey, JSON.stringify(data), { EX: 60 })
+
+    res.status(200).json({
+      respondent: CONTAINER_ID,
+      success: true,
+      record: data,
+      fromCache: false
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, err: error.message });
+  }
+
 };
 
 /** fetches a TA record from the database based on ta_id in query string
@@ -131,29 +163,33 @@ const get_user = async (req, res) => {
  * @param {express.Response} res
  */
 const get_TA = async (req, res) => {
-  console.log(`get_TA endpoint hit`);
+  const { ta_id } = req.query;
+  // console.log(`get_TA endpoint hit`);
 
-  if (!req.query.ta_id){
+  if (!ta_id){
     console.log("[ERROR] bad request, ta_id not included");
-    const response = {
-      success: false,
-      err: "[ERROR] bad request, ta_id not included"
-    }
-    res.status(400).json(response);
-    return;
+    return; res.status(400).json({ success: false, err: "[ERROR] bad request, ta_id not included", fromCache: false });
   }
 
-  console.log(`getting TA record ${req.query.ta_id}`)
+  try {
+    const cacheKey = `ta:${ta_id}`;
+    const cachedData = await redisClient.get(cacheKey);
 
-  await simulateWork(300);
+    if (cachedData) {
+      console.log(`[CACHE HIT] Serving TA ${ta_id} from Redis`);
+      return res.status(200).json({ respondent: CONTAINER_ID, success: true, record: JSON.parse(cachedData), fromCache: true });
+    }
 
-  const data = example_association;
+    console.log(`[CACHE MISS] getting TA record ${req.query.ta_id}`);
 
-  res.status(200).json({
-    respondent: CONTAINER_ID,
-    success: true,
-    record: data
-  });
+    await simulateWork(300);
+    const data = example_association;
+
+    await redisClient.set(cacheKey, JSON.stringify(data), { EX: 60 });
+    res.status(200).json({ respondent: CONTAINER_ID, success: true, record: data, fromCache: false});
+  } catch (error) {
+    res.status(500).json({ success: false, err: error.message });
+  }
 }
 
 app.get("/health", (req, res) => {

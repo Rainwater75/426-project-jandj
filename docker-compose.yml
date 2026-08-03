@@ -25,13 +25,19 @@ services:
     build: ./association-service
     environment:
       - PORT=4000
-      - REPLICA_ID=0
+      - CONTAINER_ID_ID=0
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
 
   association-1:
     build: ./association-service
     environment:
       - PORT=4000
-      - REPLICA_ID=1
+      - CONTAINER_ID=1
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
 
   caddy:
     image: caddy:2
@@ -68,3 +74,8 @@ services:
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
       - SIMULATED_LATENCY=1500
       - REPLICA_ID=replica-3
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
