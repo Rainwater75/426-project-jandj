@@ -32,6 +32,8 @@ In forming our SLOs, a main consideration that occurred was our much increased n
 
 - The liaison service must achieve a success rate of 99.9% in all endpoints. The assignees search endpoint should follow at-most-once semantics. If a query fails, it is better to retry that return out of date information or a sub par candidate. The assignee contanct endpoint which reaches out to the potential assignee should follow at-least-once semantics since redundant emails are better than the alternative of never actually informing the assignee of interest.
 
+- The match endpoint should succeed at least 99.9% of the time and have a p95 latency of less that 2 seconds. It is given that the service may take a long time to find a good match, but in exchange it should have a very low rate of failure.
+
 `deadlines-service`: This service is meant to inform users about critical deadlines. Users need to be confident that they are **guaranteed** to receive notifications.
 
 - the notification endpoint must succeed 99.99% of the time. It should be designed with **at-least-once** delivery in mind. Receiving duplicate notifications is functionally no inconvenience. **At-most-once** delivery is not appropriate for this service, because failing to receive a notification can have a large negative impact on the TA, should they subsequently learn that the due date is approaching sooner than expected.
