@@ -6,17 +6,23 @@
 
 - `deadlines-service` (Jason Karos) : sends out notifications to tenants about approaching deadlines, what needs to be completed, the fact that the process has started, etc.
 
-+-------------------+         +-------------------+
-| deadlines-service |         |  liaison-service  |
-+-------------------+         +-------------------+
-          \                             /
-           \                           /
-            v                         v
-        +---------------------------------+
-        |          email-service          |
-        |          (ambassador)           |
-        +---------------------------------+
-           /                           \
-          /                             \
-         v                               v
-      tenants                   assignee candidates
+                               +---------------+
+                               | load-balancer |
+                               +---------------+
+                                 /           \
+                                /             \
+                               v               v
++-------------------+   +-----------------+   +---------------------+      +---------------+
+| deadlines-service |   | liaison-service |   | association-service |----->| redis caching |
++-------------------+   +-----------------+   +---------------------+      +---------------+
+          \                      |                       /
+           \                     |                      /
+            v                    v                     /
+        +----------------------------------+          /
+        |          email-service           |         /
+        |           (ambassador)           |        /
+        +----------------------------------+       /
+           /                               \      /
+          /                                 \    /
+         v                                   v  v
+   assignee candidates                      tenants
