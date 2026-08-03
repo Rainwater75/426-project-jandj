@@ -4,6 +4,7 @@ const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
+const REPLICA_ID = process.env.REPLICA_ID;
 
 console.log(`environment: \n\tPORT=${PORT}`);
 
@@ -40,6 +41,8 @@ const example_record = {
       description: "Finalize formal P&S contract with owner attorneys",
     },
   ],
+  // for testing -- remove if it breaks something
+  handledBy: REPLICA_ID
 };
 
 const example_association = {
@@ -87,7 +90,9 @@ const example_association = {
         email:"diamondJoe@gmail.com"
       }
     }
-  ]
+  ],
+  // for testing -- remove if it breaks something
+  handledBy: REPLICA_ID
 }
 
 //--------------------------------------------
@@ -126,6 +131,11 @@ const get_TA = async (req, res) => {
 
   res.status(200).json(response);
 }
+
+app.get("/health", (req, res) => {
+    return res.status(200).json({ status: 'UP', service: 'association-service', handledBy: REPLICA_ID });
+});
+
 
 app.get("/get_user", get_user);
 
