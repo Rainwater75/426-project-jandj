@@ -1,5 +1,6 @@
 import express from "express";
 import nodemailer from "nodemailer";
+import { Kafka } from "kafkajs";
 
 const app = express();
 app.use(express.json());
@@ -12,10 +13,23 @@ const SMTP_SECURE = process.env.SMTP_SECURE;
 const PORT = process.env.PORT || 3000;
 const DEFAULT_FROM_EMAIL = process.env.DEFAULT_FROM_EMAIL;
 const DEFAULT_REPLY_TO = process.env.DEFAULT_REPLY_TO;
+const KAFKA_BROKER = process.env.KAFKA_BROKER || "kafka:19092";
+const GROUP_ID = process.env.GROUP_ID || "email-group";
 
 console.log(
-  `environment: \n\tSMTP_HOST=${SMTP_HOST}\n\tSMTP_PASS=${SMTP_PASS}\n\tSMTP_USER=${SMTP_USER}\n\tSMTP_SECURE=${SMTP_SECURE}\n\tSMTP_PORT=${SMTP_PORT}\n\tPORT=${PORT}\n\tDEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}\n\tDEFAULT_REPLY_TO=${DEFAULT_REPLY_TO}`,
+  `environment: \n\tSMTP_HOST=${SMTP_HOST}\n\tSMTP_PASS=${SMTP_PASS}\n\tSMTP_USER=${SMTP_USER}\n\tSMTP_SECURE=${SMTP_SECURE}\n\tSMTP_PORT=${SMTP_PORT}\n\tPORT=${PORT}\n\tDEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}\n\tDEFAULT_REPLY_TO=${DEFAULT_REPLY_TO}\n\tKAFKA_BROKER=${KAFKA_BROKER}\n\tGROUP_ID=${GROUP_ID}`
 );
+
+const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
+const consumer = kafka.consumer({ groupId:GROUP_ID });
+await consumer.connect();
+await consumer.subscribe({ topic: "emails", fromBeginning: true });
+
+// expect Kafka messages like: {emailId: number, function: string, message: Object}
+// emailId: unique id of the email job
+// endpoint: endpoint to call
+// content: message content Object to pass to endpoint
+
 
 //initialize email client
 //NOTE: gen ai was used to generate example code for use of
@@ -177,6 +191,38 @@ app.post("/contact_assignee_candidate", async (req, res) => {
       message: error.message,
     });
   }
+});
+
+const handler_map = new Map([
+  ['compileAndSendDigest', compileAndSendDigest],
+]);
+
+
+// expect Kafka messages like: {emailId: number, function: string, message: Object}
+// emailId: unique id of the email job
+// endpoint: endpoint to call
+// content: message content Object to pass to endpoint
+await consumer.run({
+  eachMessage: async ({ message }) => {
+    try{
+      const payload = JSON.parse(message);
+      const {emailId, endpoint, content} = payload;
+
+      console.log(`Handling job ${emailId} for function: ${endpoint}`);
+      const handler = handler_map.get(endpoint);
+
+      if (!handler){
+        console.log(`[ERROR] Handler not found for endpoint ${endpoint}`)
+        return
+        //do something for Kafka?
+      }
+
+      await handler(content);
+    } catch(err){
+      console.log(`[ERROR] Failed to process Kafka message: ${err}`)
+    }
+
+  },
 });
 
 app.listen(PORT, () => {
