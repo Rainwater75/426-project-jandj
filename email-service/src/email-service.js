@@ -253,6 +253,10 @@ const startKafkaConsumer = async () => {
   }
 };
 
+app.get("/health", (req, res) => {
+    return res.status(200).json({ status: 'UP', service: 'email-service'});
+});
+
 app.listen(PORT, async () => {
   console.log(`email-ambassador running on port ${PORT}`);
   await startKafkaConsumer();

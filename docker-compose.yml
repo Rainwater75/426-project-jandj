@@ -25,17 +25,26 @@ services:
     environment:
       - PORT=3002
       - KAFKA_BROKER=kafka:19092
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
     depends_on:
       kafka:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3002/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   email-service:
     build: ./email-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
     ports:
       - "3000:3000"
     environment:
@@ -53,14 +62,16 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   association-0:
     build: ./association-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
     environment:
       - PORT=4000
       - CONTAINER_ID=0
@@ -70,14 +81,16 @@ services:
         condition: service_healthy
     ports:
       - "4000:4000"
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3999/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   association-1:
     build: ./association-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
     environment:
       - PORT=4001
       - CONTAINER_ID=1
@@ -85,11 +98,7 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3999/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+
 
   caddy:
     image: caddy:2
@@ -109,14 +118,16 @@ services:
         condition: service_healthy
       liaison-3:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:8080/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   liaison-1:
     build: ./liaison-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/liaison/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
     environment:
       - PORT=3001
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
@@ -129,14 +140,17 @@ services:
         condition: service_healthy
       email-service:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8080/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+
 
   liaison-2:
     build: ./liaison-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/liaison/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
     environment:
       - PORT=3001
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
@@ -149,14 +163,16 @@ services:
         condition: service_healthy
       email-service:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8080/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   liaison-3:
     build: ./liaison-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/liaison/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
     environment:
       - PORT=3001
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
@@ -169,11 +185,6 @@ services:
         condition: service_healthy
       email-service:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8080/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   redis:
     image: redis:7
