@@ -14,6 +14,8 @@ const SIMULATED_LATENCY = process.env.SIMULATED_LATENCY || 1500;
 const EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL || "http://email-service:3000/contact_assignee_candidate";
 const REPLICA_ID = process.env.REPLICA_ID; 
 const KAFKA_BROKER = process.env.KAFKA_BROKER || "kafka:19092";
+const FAILURE_MODE = (process.env.FAILURE_MODE || "none").toLowerCase(); // fail, slow or else
+const FAILURE_LATENCY_MS = process.env.FAILURE_LATENCY_MS || 4000
 
 const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
 const producer = kafka.producer();
@@ -38,9 +40,13 @@ function simulateWork(latencyMs = SIMULATED_LATENCY) {
 }
 
 
-// returns that the service is healthy 
+// returns that the service is healthy
+app.get("/health", (req, res) => {
+    return res.status(200).json({ status: "ok" });
+});
+
 app.get("/liaison/health", (req, res) => {
-    return res.status(200).json({ status: 'UP', service: 'liaison-service', handledBy: REPLICA_ID });
+    return res.status(200).json({ status: "ok", service: "liaison-service", handledBy: REPLICA_ID });
 });
 
 // endpoint for retreiving compatible asingees that can buy the building on the tenant's behalf 
@@ -79,11 +85,20 @@ app.post("/liaison/contact", async (req, res) => {
         return res.status(400).json({ error: "Missing required fields: assigneeId and tenantAssociationId" });
     }
 
-    // simulate network latency 
-    await simulateWork();
+    try {
+        if (FAILURE_MODE === "fail") {
+            console.log(`[FAULT] inducing failure for ${REPLICA_ID}`);
+            return res.status(503).json({ success: false, error: "Inducedx failure mode enabled", handledBy: REPLICA_ID });
+        }
+
+        if (FAILURE_MODE === "slow") {
+            console.log(`[FAULT] inducing higher latency for ${REPLICA_ID}`);
+            await simulateWork(FAILURE_LATENCY_MS);
+        } else {
+            await simulateWork();
+        }
 
     // send to the ambassador which will send the email
-    try{
         // const ambassadorResponse = await fetch("http://email-service:3000/contact_assignee_candidate", {
         //     method: "POST",
         //     headers: { "Content-Type": "application/json" },
@@ -116,7 +131,13 @@ app.post("/liaison/contact", async (req, res) => {
             ],
         });
 
-        console.log("[KAFKA] published assignee contact event");
+        console.log(`[KAFKA] published assignee contact event for ${REPLICA_ID}`);
+        return res.status(202).json({
+            success: true,
+            status: "queued",
+            message: "Assignee contact request queued for async processing",
+            handledBy: REPLICA_ID
+        });
         
     } catch (error) {
         console.error("Liaison service failed to send assignee contact email via ambassador:", error);

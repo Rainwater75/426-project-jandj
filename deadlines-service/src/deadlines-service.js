@@ -77,7 +77,16 @@ const ta_admin_digest = async (req, res) => {
   });
 
   console.log("[KAFKA] published deadline digest event");
+  return res.status(202).json({
+    success: true,
+    status: "queued",
+    message: "deadline digest request queued for async processing"
+  });
 };
+
+app.get("/health", (req, res) => {
+  return res.status(200).json({ status: "ok" });
+});
 
 app.post("/ta_admin_digest", ta_admin_digest);
 

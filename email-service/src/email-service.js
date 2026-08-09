@@ -167,6 +167,10 @@ const contactAssigneeCandidate = async ({ associationId, assigneeId, message }) 
   };
 };
 
+app.get("/health", (req, res) => {
+  return res.status(200).json({ status: "ok" });
+});
+
 app.post("/email_deadline_digest", async (req, res) => {
   try {
     const { admin_email, admin_name, property_name, deadlines } = req.body;
@@ -226,7 +230,9 @@ await consumer.run({
         //do something for Kafka?
       }
 
+      console.log(`[KAFKA] received message on topic ${topic}`);
       await handler(content);
+      console.log(`[KAFKA] processed message on topic ${topic}`);
     } catch(err){
       console.log(`[ERROR] Failed to process Kafka message: ${err}`)
     }
