@@ -136,6 +136,11 @@ services:
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
       - SIMULATED_LATENCY=1500
       - REPLICA_ID=replica-1
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
 
   liaison-2:
     build: ./liaison-service
@@ -151,6 +156,11 @@ services:
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
       - SIMULATED_LATENCY=1500
       - REPLICA_ID=replica-2
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
   liaison-3:
     build: ./liaison-service
     healthcheck:
@@ -165,6 +175,11 @@ services:
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
       - SIMULATED_LATENCY=1500
       - REPLICA_ID=replica-3
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
 
   redis:
     image: redis:7
