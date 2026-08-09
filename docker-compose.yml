@@ -18,6 +18,15 @@ services:
       - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:19093
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
 
+  kafka-init:
+    build: ./kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      - KAFKA_BROKER=kafka:19092
+
   deadlines-service:
     build: ./deadlines-service
     ports:
@@ -62,6 +71,8 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
 
   association-0:
     build: ./association-service
@@ -140,7 +151,8 @@ services:
         condition: service_healthy
       email-service:
         condition: service_healthy
-
+      kafka-init:
+        condition: service_completed_successfully
 
   liaison-2:
     build: ./liaison-service
@@ -163,7 +175,8 @@ services:
         condition: service_healthy
       email-service:
         condition: service_healthy
-
+      kafka-init:
+        condition: service_completed_successfully
   liaison-3:
     build: ./liaison-service
     healthcheck:
@@ -185,6 +198,8 @@ services:
         condition: service_healthy
       email-service:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
 
   redis:
     image: redis:7
