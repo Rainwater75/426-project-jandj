@@ -164,9 +164,6 @@ const contactAssigneeCandidate = async ({ associationId, assigneeId, message }) 
   };
 };
 
-app.get("/health", (req, res) => {
-  return res.status(200).json({ status: "ok" });
-});
 
 app.post("/email_deadline_digest", async (req, res) => {
   try {
@@ -216,51 +213,53 @@ await consumer.subscribe({ topic: "deadline.digest", fromBeginning: true });
 await consumer.subscribe({ topic: "assignee.contact", fromBeginning: true });
 
 const startKafkaConsumer = async () => {
-  try {
-    await consumer.connect();
-    await consumer.subscribe({ topic: "deadline.digest", fromBeginning: true });
-    await consumer.subscribe({ topic: "assignee.contact", fromBeginning: true });
+  let isConnected = false;
 
-    // 2. Start the long-lived processing loop
-    await consumer.run({
-      eachMessage: async ({ topic, message }) => {
-        try{
-          const  content = JSON.parse(message.value.toString());
-          // const payload = event.payload ? event.payload.content : event;
-          // const {emailId, endpoint, content} = event.payload;
+  while (!isConnected) {
+    try {
+      console.log("[KAFKA] Attempting to connect email-service consumer...");
+      await consumer.connect();
+      
+      console.log("[KAFKA] Consumer connected. Subscribing to topics...");
+      await consumer.subscribe({ topic: "deadline.digest", fromBeginning: true });
+      await consumer.subscribe({ topic: "assignee.contact", fromBeginning: true });
 
-          // console.log(`Handling job ${emailId} for function: ${endpoint}`);
-          const handler = handler_map.get(topic);
+      await consumer.run({
+        eachMessage: async ({ topic, message }) => {
+          try {
+            const content = JSON.parse(message.value.toString());
+            const handler = handler_map.get(topic);
 
-          if (!handler){
-            console.log(`[ERROR] Handler not found for topic ${topic}`)
-            return
-            //do something for Kafka?
+            if (!handler) {
+              console.log(`[ERROR] Handler not found for topic ${topic}`);
+              return;
+            }
+
+            console.log(`[KAFKA] received message on topic ${topic}`);
+            await handler(content);
+            console.log(`[KAFKA] processed message on topic ${topic}`);
+          } catch (err) {
+            console.log(`[ERROR] Failed to process Kafka message: ${err}`);
           }
+        },
+      });
 
-          console.log(`[KAFKA] received message on topic ${topic}`);
-          await handler(content);
-          console.log(`[KAFKA] processed message on topic ${topic}`);
-        } catch(err){
-          console.log(`[ERROR] Failed to process Kafka message: ${err}`)
-        }
-
-      },
-    });
-    console.log("[KAFKA] Consumer is active and listening.");
-  } catch (error) {
-    console.error("[KAFKA CRITICAL ERROR] Failed to initialize consumer:", error);
+      console.log("[KAFKA] Consumer is active and listening.");
+      isConnected = true;
+    } catch (error) {
+      if (error.code === 3 || error.code === 15 || error.type === 'UNKNOWN_TOPIC_OR_PARTITION') {
+        console.warn("[KAFKA WARNING] Broker metadata or topics initializing. Retrying in 3 seconds...");
+      } else {
+        console.error("[KAFKA CRITICAL ERROR] Failed to initialize consumer:", error);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
   }
 };
 
 app.get("/health", (req, res) => {
-    return res.status(200).json({ status: 'UP', service: 'email-service'});
+  return res.status(200).json({ status: "ok" });
 });
-
-app.get("/health", (req, res) => {
-    return res.status(200).json({ status: 'UP', service: 'email-service'});
-});
-
 
 app.listen(PORT, async () => {
   console.log(`email-ambassador running on port ${PORT}`);

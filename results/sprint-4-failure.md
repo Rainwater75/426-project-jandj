@@ -8,13 +8,15 @@ You can force an error with the `liaison-service` at the `POST /liaison/contact`
 ## 2. How to Trigger It
 
 ```bash
-   $env:FAILURE_MODE="slow"
+   $env:FAILURE_MODE="fail"
    docker compose up --build
 
    $env:FAILURE_MODE="slow"
    docker compose up --build
 
-curl -X POST http://localhost:8080/liaison/contact -d '{"assigneeId": "assignee-01", "tenantAssociationId": "ta-123", "message": "Intent to file TOPA notice."}'
+curl -X POST http://localhost:8080/liaison/contact \
+  -H "Content-Type: application/json" \
+  -d '{"assigneeId": "assignee-01", "tenantAssociationId": "ta-123", "message": "Intent to file TOPA notice."}'
 ```
 
 ## 3. How to Clear It
