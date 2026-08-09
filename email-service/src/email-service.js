@@ -22,10 +22,7 @@ console.log(
 
 const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
 const consumer = kafka.consumer({ groupId:GROUP_ID });
-await consumer.connect();
-// await consumer.subscribe({ topic: "emails", fromBeginning: true });
-await consumer.subscribe({ topic: "deadline.digest", fromBeginning: true });
-await consumer.subscribe({ topic: "assignee.contact", fromBeginning: true });
+
 
 
 // expect Kafka messages like: {emailId: number, function: string, message: Object}
@@ -214,32 +211,49 @@ const handler_map = new Map([
 // content: message content Object to pass to endpoint
 
 
-await consumer.run({
-  eachMessage: async ({ topic, message }) => {
-    try{
-      const  content = JSON.parse(message.value.toString());
-      // const payload = event.payload ? event.payload.content : event;
-      // const {emailId, endpoint, content} = event.payload;
+await consumer.connect();
+await consumer.subscribe({ topic: "deadline.digest", fromBeginning: true });
+await consumer.subscribe({ topic: "assignee.contact", fromBeginning: true });
 
-      // console.log(`Handling job ${emailId} for function: ${endpoint}`);
-      const handler = handler_map.get(topic);
+const startKafkaConsumer = async () => {
+  try {
+    await consumer.connect();
+    await consumer.subscribe({ topic: "deadline.digest", fromBeginning: true });
+    await consumer.subscribe({ topic: "assignee.contact", fromBeginning: true });
 
-      if (!handler){
-        console.log(`[ERROR] Handler not found for topic ${topic}`)
-        return
-        //do something for Kafka?
-      }
+    // 2. Start the long-lived processing loop
+    await consumer.run({
+      eachMessage: async ({ topic, message }) => {
+        try{
+          const  content = JSON.parse(message.value.toString());
+          // const payload = event.payload ? event.payload.content : event;
+          // const {emailId, endpoint, content} = event.payload;
 
-      console.log(`[KAFKA] received message on topic ${topic}`);
-      await handler(content);
-      console.log(`[KAFKA] processed message on topic ${topic}`);
-    } catch(err){
-      console.log(`[ERROR] Failed to process Kafka message: ${err}`)
-    }
+          // console.log(`Handling job ${emailId} for function: ${endpoint}`);
+          const handler = handler_map.get(topic);
 
-  },
-});
+          if (!handler){
+            console.log(`[ERROR] Handler not found for topic ${topic}`)
+            return
+            //do something for Kafka?
+          }
 
-app.listen(PORT, () => {
+          console.log(`[KAFKA] received message on topic ${topic}`);
+          await handler(content);
+          console.log(`[KAFKA] processed message on topic ${topic}`);
+        } catch(err){
+          console.log(`[ERROR] Failed to process Kafka message: ${err}`)
+        }
+
+      },
+    });
+    console.log("[KAFKA] Consumer is active and listening.");
+  } catch (error) {
+    console.error("[KAFKA CRITICAL ERROR] Failed to initialize consumer:", error);
+  }
+};
+
+app.listen(PORT, async () => {
   console.log(`email-ambassador running on port ${PORT}`);
+  await startKafkaConsumer();
 });

@@ -19,7 +19,6 @@ const FAILURE_LATENCY_MS = process.env.FAILURE_LATENCY_MS || 4000
 
 const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
 const producer = kafka.producer();
-await producer.connect();
 
 // ai generated btw
 const MOCK_ASSIGNEES = [
@@ -120,6 +119,8 @@ app.post("/liaison/contact", async (req, res) => {
         //     sentAt: new Date().toISOString(),
         //     handledBy: REPLICA_ID
         // });
+
+
         await producer.send({
             topic: "assignee.contact",
             messages: [
@@ -151,9 +152,16 @@ app.post("/liaison/contact", async (req, res) => {
 });
 
 
-
-app.listen(PORT, () => console.log(`liaison-service replica: ${REPLICA_ID} listening on port: ${PORT}`));
-
+app.listen(PORT, async () => {
+    console.log(`liaison-service replica: ${REPLICA_ID} listening on port: ${PORT}`);
+    try {
+        await producer.connect();
+        console.log("[KAFKA] Liaison producer connected successfully.");
+    } catch (error) {
+        console.error("[KAFKA ERROR] Producer failed to connect:", error);
+    }
+});
+    
 
 // tests for match and contact 
 

@@ -9,7 +9,6 @@ const KAFKA_BROKER = process.env.KAFKA_BROKER || "kafka:19092";
 
 const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
 const producer = kafka.producer();
-await producer.connect();
 
 console.log(`environment: \n\tPORT=${PORT}`);
 
@@ -90,6 +89,12 @@ app.get("/health", (req, res) => {
 
 app.post("/ta_admin_digest", ta_admin_digest);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`deadlines-service listening on port ${PORT}`);
+  try {
+    await producer.connect();
+    console.log("[KAFKA] Deadlines producer connected successfully.");
+  } catch (error) {
+    console.error("[KAFKA ERROR] Producer failed to connect:", error);
+  }
 });
