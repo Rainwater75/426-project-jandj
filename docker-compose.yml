@@ -18,12 +18,32 @@ services:
       - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:19093
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+
+  kafka-init:
+    build: ./kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      - KAFKA_BROKER=kafka:19092
+
   deadlines-service:
     build: ./deadlines-service
     ports:
       - 3002:3002
     environment:
       - PORT=3002
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    depends_on:
+      kafka:
+        condition: service_healthy
 
   email-service:
     build: ./email-service
@@ -49,7 +69,7 @@ services:
     build: ./association-service
     environment:
       - PORT=4000
-      - CONTAINER_ID_ID=0
+      - CONTAINER_ID=0
       - REDIS_URL=redis://redis:6379
     depends_on:
       - redis
@@ -86,6 +106,7 @@ services:
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
       - SIMULATED_LATENCY=1500
       - REPLICA_ID=replica-1
+
   liaison-2:
     build: ./liaison-service
     environment:
