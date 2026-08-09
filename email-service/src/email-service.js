@@ -23,7 +23,10 @@ console.log(
 const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
 const consumer = kafka.consumer({ groupId:GROUP_ID });
 await consumer.connect();
-await consumer.subscribe({ topic: "emails", fromBeginning: true });
+// await consumer.subscribe({ topic: "emails", fromBeginning: true });
+await consumer.subscribe({ topic: "deadline.digest", fromBeginning: true });
+await consumer.subscribe({ topic: "assignee.contact", fromBeginning: true });
+
 
 // expect Kafka messages like: {emailId: number, function: string, message: Object}
 // emailId: unique id of the email job
@@ -56,6 +59,15 @@ const transporter = nodemailer.createTransport({
  * @param {express.Response} res
  */
 const compileAndSendDigest = async ({ admin_email, admin_name, property_name, deadlines, custom_message }) => {
+
+  //input validation
+  if (!admin_email || !property_name || !Array.isArray(deadlines) || deadlines.length === 0) {
+    // return res.status(400).json({
+    //   error: "Missing required fields: admin_email, property_name, and non-empty deadlines array",
+    // });
+    throw new Error("Missing required fields");
+  }
+
   console.log("sending TA Admin digest...");
   const sorted_deadlines = [...deadlines].sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
 
@@ -118,17 +130,46 @@ const compileAndSendDigest = async ({ admin_email, admin_name, property_name, de
   });
 };
 
+const contactAssigneeCandidate = async ({ associationId, assigneeId, message }) => {
+  if (!associationId || !assigneeId) {
+    throw new Error("Missing required fields");
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  const candidate = { admin_email: "assignee@gmail.org", admin_name: "Assignee" };
+  const property = { property_name: "742 Evergreen Terrace" };
+  const deadlinesList = [
+    {
+      title: "Expression of Interest Submission",
+      due_date: "2026-08-10T17:00:00Z",
+      description: "Deadline for the tenant association to formally deliver our statement of interest to the owner.",
+    },
+    {
+      title: "Assignee Partnership Deadline",
+      due_date: "2026-08-25T23:59:59Z",
+      description: "Last day to legally execute our rights assignment to a qualified non-profit developer.",
+    },
+  ];
+
+  const result = await compileAndSendDigest({
+    admin_email: candidate.admin_email,
+    admin_name: candidate.admin_name,
+    property_name: property.property_name,
+    deadlines: deadlinesList,
+    custom_message: message || " ",
+  });
+
+  return {
+    success: true,
+    messageId: result.messageId,
+    type: "contact_asignee_candidate",
+  };
+};
+
 app.post("/email_deadline_digest", async (req, res) => {
   try {
     const { admin_email, admin_name, property_name, deadlines } = req.body;
-
-    //input validation
-    if (!admin_email || !property_name || !Array.isArray(deadlines) || deadlines.length === 0) {
-      return res.status(400).json({
-        error: "Missing required fields: admin_email, property_name, and non-empty deadlines array",
-      });
-    }
-
     //compile email HTML and send
     const result = await compileAndSendDigest({ admin_email, admin_name, property_name, deadlines });
 
@@ -146,44 +187,8 @@ app.post("/email_deadline_digest", async (req, res) => {
 app.post("/contact_assignee_candidate", async (req, res) => {
   try {
     const { associationId, assigneeId, message } = req.body;
-
-    if (!associationId || !assigneeId) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    // simulate work
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // query the database/other services for needed information using associationId and assigneeId
-    const candidate = { admin_email: "assignee@gmail.org", admin_name: "Assignee" };
-    const property = { property_name: "742 Evergreen Terrace" };
-    const deadlinesList = [
-      {
-        title: "Expression of Interest Submission",
-        due_date: "2026-08-10T17:00:00Z",
-        description: "Deadline for the tenant association to formally deliver our statement of interest to the owner.",
-      },
-      {
-        title: "Assignee Partnership Deadline",
-        due_date: "2026-08-25T23:59:59Z",
-        description: "Last day to legally execute our rights assignment to a qualified non-profit developer.",
-      },
-    ];
-
-    // form the email result and send
-    const result = await compileAndSendDigest({
-      admin_email: candidate.admin_email,
-      admin_name: candidate.admin_name,
-      property_name: property.property_name,
-      deadlines: deadlinesList,
-      custom_message: message || " ",
-    });
-
-    res.status(200).json({
-      success: true,
-      messageId: result.messageId,
-      type: "contact_asignee_candidate",
-    });
+    const result = await contactAssigneeCandidate({ associationId, assigneeId, message });
+    return res.status(200).json(result);
   } catch (error) {
     console.error("Assignee candidate routing error:", error);
     res.status(500).json({
@@ -194,25 +199,29 @@ app.post("/contact_assignee_candidate", async (req, res) => {
 });
 
 const handler_map = new Map([
-  ['compileAndSendDigest', compileAndSendDigest],
+  ['deadline.digest', compileAndSendDigest],
+  ['assignee.contact', contactAssigneeCandidate],
 ]);
 
 
-// expect Kafka messages like: {emailId: number, function: string, message: Object}
+// expect Kafka messages like: payload: {emailId: number, function: string, message: Object}
 // emailId: unique id of the email job
 // endpoint: endpoint to call
 // content: message content Object to pass to endpoint
-await consumer.run({
-  eachMessage: async ({ message }) => {
-    try{
-      const payload = JSON.parse(message);
-      const {emailId, endpoint, content} = payload;
 
-      console.log(`Handling job ${emailId} for function: ${endpoint}`);
-      const handler = handler_map.get(endpoint);
+
+await consumer.run({
+  eachMessage: async ({ topic, message }) => {
+    try{
+      const  content = JSON.parse(message.value.toString());
+      // const payload = event.payload ? event.payload.content : event;
+      // const {emailId, endpoint, content} = event.payload;
+
+      // console.log(`Handling job ${emailId} for function: ${endpoint}`);
+      const handler = handler_map.get(topic);
 
       if (!handler){
-        console.log(`[ERROR] Handler not found for endpoint ${endpoint}`)
+        console.log(`[ERROR] Handler not found for topic ${topic}`)
         return
         //do something for Kafka?
       }

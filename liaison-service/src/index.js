@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { stringify } from 'querystring';
 import { AssertionError } from "assert/strict";
+import { Kafka } from "kafkajs";
 
 const app = express();
 app.use(express.json());
@@ -12,6 +13,11 @@ const PORT = process.env.PORT || 3001;
 const SIMULATED_LATENCY = process.env.SIMULATED_LATENCY || 1500;
 const EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL || "http://email-service:3000/contact_assignee_candidate";
 const REPLICA_ID = process.env.REPLICA_ID; 
+const KAFKA_BROKER = process.env.KAFKA_BROKER || "kafka:19092";
+
+const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
+const producer = kafka.producer();
+await producer.connect();
 
 // ai generated btw
 const MOCK_ASSIGNEES = [
@@ -78,27 +84,46 @@ app.post("/liaison/contact", async (req, res) => {
 
     // send to the ambassador which will send the email
     try{
-        const ambassadorResponse = await fetch("http://email-service:3000/contact_assignee_candidate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ associationId: tenantAssociationId, assigneeId: assigneeId, message: message })
+        // const ambassadorResponse = await fetch("http://email-service:3000/contact_assignee_candidate", {
+        //     method: "POST",
+        //     headers: { "Content-Type": "application/json" },
+        //     body: JSON.stringify({ associationId: tenantAssociationId, assigneeId: assigneeId, message: message })
+        // });
+
+        // if(!ambassadorResponse.ok){
+        //     const errorData = await ambassadorResponse.json();
+        //     throw new Error(errorData.error || "Ambassador rejected request");
+        // }
+
+        // const ambassadorData = await ambassadorResponse.json();
+
+        // return res.status(201).json({
+        //     success: true,
+        //     deliveryStatus: "Sent",
+        //     messageId: ambassadorData.messageId,
+        //     tenantAssociationId: tenantAssociationId,
+        //     sentAt: new Date().toISOString(),
+        //     handledBy: REPLICA_ID
+        // });
+        await producer.send({
+            topic: "assignee.contact",
+            messages: [
+                { value: JSON.stringify({
+                    assigneeId,
+                    tenantAssociationId,
+                    message,
+                })},
+            ],
         });
 
-        if(!ambassadorResponse.ok){
-            const errorData = await ambassadorResponse.json();
-            throw new Error(errorData.error || "Ambassador rejected request");
-        }
-
-        const ambassadorData = await ambassadorResponse.json();
-
-        return res.status(201).json({
-            success: true,
-            deliveryStatus: "Sent",
-            messageId: ambassadorData.messageId,
-            tenantAssociationId: tenantAssociationId,
-            sentAt: new Date().toISOString(),
-            handledBy: REPLICA_ID
+        await producer.send({
+            topic: "deadline.digest",
+            messages: [
+            { value: JSON.stringify(digest) }
+            ],
         });
+
+        console.log("[KAFKA] published assignee contact event");
         
     } catch (error) {
         console.error("Liaison service failed to send assignee contact email via ambassador:", error);
