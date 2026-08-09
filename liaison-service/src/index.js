@@ -109,17 +109,10 @@ app.post("/liaison/contact", async (req, res) => {
             topic: "assignee.contact",
             messages: [
                 { value: JSON.stringify({
+                    associationId: tenantAssociationId,
                     assigneeId,
-                    tenantAssociationId,
                     message,
                 })},
-            ],
-        });
-
-        await producer.send({
-            topic: "deadline.digest",
-            messages: [
-            { value: JSON.stringify(digest) }
             ],
         });
 
