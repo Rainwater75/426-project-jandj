@@ -64,6 +64,10 @@ const ta_admin_digest = async (req, res) => {
   res.json(await response.json());
 };
 
+app.get("/health", (req, res) => {
+    return res.status(200).json({ status: 'UP', service: 'deadlines-service'});
+});
+
 app.post("/ta_admin_digest", ta_admin_digest);
 
 app.listen(PORT, () => {

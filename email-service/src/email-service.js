@@ -45,7 +45,7 @@ const transporter = nodemailer.createTransport({
 });
 
 //TODO:
-// 1. add health check
+// 1.
 
 /**
  * Gathers records needed for TA admin digest and then sends notifications via email-ambassador.
@@ -224,6 +224,11 @@ await consumer.run({
 
   },
 });
+
+app.get("/health", (req, res) => {
+    return res.status(200).json({ status: 'UP', service: 'email-service'});
+});
+
 
 app.listen(PORT, () => {
   console.log(`email-ambassador running on port ${PORT}`);
