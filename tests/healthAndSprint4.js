@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 
 // tests are ai generated
+// tests that all health endpoints are present and work
+// tests for kafka pub/sub functionality
+// tests for redis cache from sprint 3
 
 const run = (cmd, args = []) => execFileSync(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] }).toString().trim();
 
