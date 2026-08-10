@@ -68,10 +68,20 @@ const ta_admin_digest = async (req, res) => {
 
   // res.json(await response.json());
 
+  // Kafka message schema: payload: {emailId: number, operation: string, message: Object}
+  // emailId: unique id of the email job
+  // operation: handler to call
+  // content: message content Object to pass to endpoint
+
   await producer.send({
-    topic: "deadline.digest",
+    topic: "emails",
     messages: [
-      { value: JSON.stringify(digest) }
+      {
+        value: JSON.stringify({
+          operation: "deadline.digest",
+          content: digest,
+        }),
+      },
     ],
   });
 
@@ -79,7 +89,7 @@ const ta_admin_digest = async (req, res) => {
   return res.status(202).json({
     success: true,
     status: "queued",
-    message: "deadline digest request queued for async processing"
+    message: "deadline digest request queued for async processing",
   });
 };
 
