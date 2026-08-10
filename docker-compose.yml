@@ -5,7 +5,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
-
     image: apache/kafka:3.8.0
     ports:
       - "9092:9092"
@@ -31,9 +30,10 @@ services:
   deadlines-service:
     build: ./deadlines-service
     ports:
-      - 3002:3002
+      - "3002:3002"
     environment:
       - PORT=3002
+      - KAFKA_BROKER=kafka:19092
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
       interval: 30s
@@ -55,7 +55,7 @@ services:
       start_period: 40s
       start_interval: 5s
     ports:
-      - 3000:3000
+      - "3000:3000"
     environment:
       - PORT=3000
       - SMTP_HOST=smtp.gmail.com
@@ -88,9 +88,10 @@ services:
       - CONTAINER_ID=0
       - REDIS_URL=redis://redis:6379
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     ports:
-      - 4000:4000
+      - "4000:4000"
 
   association-1:
     build: ./association-service
@@ -106,7 +107,9 @@ services:
       - CONTAINER_ID=1
       - REDIS_URL=redis://redis:6379
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+
 
   caddy:
     image: caddy:2
@@ -116,11 +119,16 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
     depends_on:
-      - association-0
-      - association-1
-      - liaison-1
-      - liaison-2
-      - liaison-3
+      association-0:
+        condition: service_healthy
+      association-1:
+        condition: service_healthy
+      liaison-1:
+        condition: service_healthy
+      liaison-2:
+        condition: service_healthy
+      liaison-3:
+        condition: service_healthy
 
   liaison-1:
     build: ./liaison-service
@@ -136,8 +144,12 @@ services:
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
       - SIMULATED_LATENCY=1500
       - REPLICA_ID=replica-1
+      - FAILURE_MODE=${FAILURE_MODE:-none}
+      - FAILURE_LATENCY_MS=${FAILURE_LATENCY_MS:-4000}
     depends_on:
       kafka:
+        condition: service_healthy
+      email-service:
         condition: service_healthy
       kafka-init:
         condition: service_completed_successfully
@@ -156,8 +168,12 @@ services:
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
       - SIMULATED_LATENCY=1500
       - REPLICA_ID=replica-2
+      - FAILURE_MODE=${FAILURE_MODE:-none}
+      - FAILURE_LATENCY_MS=${FAILURE_LATENCY_MS:-4000}
     depends_on:
       kafka:
+        condition: service_healthy
+      email-service:
         condition: service_healthy
       kafka-init:
         condition: service_completed_successfully
@@ -175,8 +191,12 @@ services:
       - EMAIL_SERVICE_URL=http://email-service:3000/contact_assignee_candidate
       - SIMULATED_LATENCY=1500
       - REPLICA_ID=replica-3
+      - FAILURE_MODE=${FAILURE_MODE:-none}
+      - FAILURE_LATENCY_MS=${FAILURE_LATENCY_MS:-4000}
     depends_on:
       kafka:
+        condition: service_healthy
+      email-service:
         condition: service_healthy
       kafka-init:
         condition: service_completed_successfully
@@ -185,3 +205,8 @@ services:
     image: redis:7
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

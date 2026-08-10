@@ -1,4 +1,10 @@
 :8080 {
+    handle /health {
+        respond 200 {
+            body "{\"status\":\"ok\"}"
+        }
+    }
+
     reverse_proxy liaison-1:3001 liaison-2:3001 liaison-3:3001 {
         lb_policy round_robin
         health_uri /liaison/health
@@ -9,6 +15,12 @@
 }
 
 :3999 {
+    handle /health {
+        respond 200 {
+            body "{\"status\":\"ok\"}"
+        }
+    }
+
     reverse_proxy association-0:4000 association-1:4001 {
         lb_policy round_robin
         health_uri /health

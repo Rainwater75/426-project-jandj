@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { stringify } from 'querystring';
 import { AssertionError } from "assert/strict";
+import { Kafka } from "kafkajs";
 
 const app = express();
 app.use(express.json());
@@ -12,6 +13,12 @@ const PORT = process.env.PORT || 3001;
 const SIMULATED_LATENCY = process.env.SIMULATED_LATENCY || 1500;
 const EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL || "http://email-service:3000/contact_assignee_candidate";
 const REPLICA_ID = process.env.REPLICA_ID; 
+const KAFKA_BROKER = process.env.KAFKA_BROKER || "kafka:19092";
+const FAILURE_MODE = (process.env.FAILURE_MODE || "none").toLowerCase(); // fail, slow or else
+const FAILURE_LATENCY_MS = process.env.FAILURE_LATENCY_MS || 4000
+
+const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
+const producer = kafka.producer();
 
 // ai generated btw
 const MOCK_ASSIGNEES = [
@@ -32,9 +39,13 @@ function simulateWork(latencyMs = SIMULATED_LATENCY) {
 }
 
 
-// returns that the service is healthy 
+// returns that the service is healthy
+app.get("/health", (req, res) => {
+    return res.status(200).json({ status: "ok" });
+});
+
 app.get("/liaison/health", (req, res) => {
-    return res.status(200).json({ status: 'UP', service: 'liaison-service', handledBy: REPLICA_ID });
+    return res.status(200).json({ status: "ok", service: "liaison-service", handledBy: REPLICA_ID });
 });
 
 // endpoint for retreiving compatible asingees that can buy the building on the tenant's behalf 
@@ -73,30 +84,59 @@ app.post("/liaison/contact", async (req, res) => {
         return res.status(400).json({ error: "Missing required fields: assigneeId and tenantAssociationId" });
     }
 
-    // simulate network latency 
-    await simulateWork();
-
-    // send to the ambassador which will send the email
-    try{
-        const ambassadorResponse = await fetch("http://email-service:3000/contact_assignee_candidate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ associationId: tenantAssociationId, assigneeId: assigneeId, message: message })
-        });
-
-        if(!ambassadorResponse.ok){
-            const errorData = await ambassadorResponse.json();
-            throw new Error(errorData.error || "Ambassador rejected request");
+    try {
+        if (FAILURE_MODE === "fail") {
+            console.log(`[FAULT] inducing failure for ${REPLICA_ID}`);
+            return res.status(503).json({ success: false, error: "Inducedx failure mode enabled", handledBy: REPLICA_ID });
         }
 
-        const ambassadorData = await ambassadorResponse.json();
+        if (FAILURE_MODE === "slow") {
+            console.log(`[FAULT] inducing higher latency for ${REPLICA_ID}`);
+            await simulateWork(FAILURE_LATENCY_MS);
+        } else {
+            await simulateWork();
+        }
 
-        return res.status(201).json({
+    // send to the ambassador which will send the email
+        // const ambassadorResponse = await fetch("http://email-service:3000/contact_assignee_candidate", {
+        //     method: "POST",
+        //     headers: { "Content-Type": "application/json" },
+        //     body: JSON.stringify({ associationId: tenantAssociationId, assigneeId: assigneeId, message: message })
+        // });
+
+        // if(!ambassadorResponse.ok){
+        //     const errorData = await ambassadorResponse.json();
+        //     throw new Error(errorData.error || "Ambassador rejected request");
+        // }
+
+        // const ambassadorData = await ambassadorResponse.json();
+
+        // return res.status(201).json({
+        //     success: true,
+        //     deliveryStatus: "Sent",
+        //     messageId: ambassadorData.messageId,
+        //     tenantAssociationId: tenantAssociationId,
+        //     sentAt: new Date().toISOString(),
+        //     handledBy: REPLICA_ID
+        // });
+
+
+        await producer.send({
+            topic: "assignee.contact",
+            messages: [
+                { value: JSON.stringify({
+                    associationId: tenantAssociationId,
+                    assigneeId,
+                    message,
+                })},
+            ],
+        });
+
+        console.log(`[KAFKA] published assignee contact event for ${REPLICA_ID}`);
+        return res.status(202).json({
             success: true,
-            deliveryStatus: "Sent",
-            messageId: ambassadorData.messageId,
-            tenantAssociationId: tenantAssociationId,
-            sentAt: new Date().toISOString(),
+            status: "queued",
+            message: "Assignee contact request queued for async processing",
             handledBy: REPLICA_ID
         });
         
@@ -112,9 +152,16 @@ app.post("/liaison/contact", async (req, res) => {
 });
 
 
-
-app.listen(PORT, () => console.log(`liaison-service replica: ${REPLICA_ID} listening on port: ${PORT}`));
-
+app.listen(PORT, async () => {
+    console.log(`liaison-service replica: ${REPLICA_ID} listening on port: ${PORT}`);
+    try {
+        await producer.connect();
+        console.log("[KAFKA] Liaison producer connected successfully.");
+    } catch (error) {
+        console.error("[KAFKA ERROR] Producer failed to connect:", error);
+    }
+});
+    
 
 // tests for match and contact 
 

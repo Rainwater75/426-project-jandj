@@ -1,9 +1,14 @@
 import express from "express";
+import { Kafka } from "kafkajs";
 
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 3002;
+const KAFKA_BROKER = process.env.KAFKA_BROKER || "kafka:19092";
+
+const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
+const producer = kafka.producer();
 
 console.log(`environment: \n\tPORT=${PORT}`);
 
@@ -55,21 +60,41 @@ const ta_admin_digest = async (req, res) => {
 
   const digest = example_record;
 
-  const response = await fetch("http://email-service:3000/email_deadline_digest", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(digest),
+  // const response = await fetch("http://email-service:3000/email_deadline_digest", {
+  //   method: "POST",
+  //   headers: { "Content-Type": "application/json" },
+  //   body: JSON.stringify(digest),
+  // });
+
+  // res.json(await response.json());
+
+  await producer.send({
+    topic: "deadline.digest",
+    messages: [
+      { value: JSON.stringify(digest) }
+    ],
   });
 
-  res.json(await response.json());
+  console.log("[KAFKA] published deadline digest event");
+  return res.status(202).json({
+    success: true,
+    status: "queued",
+    message: "deadline digest request queued for async processing"
+  });
 };
 
 app.get("/health", (req, res) => {
-    return res.status(200).json({ status: 'UP', service: 'deadlines-service'});
+  return res.status(200).json({ status: "ok" });
 });
 
 app.post("/ta_admin_digest", ta_admin_digest);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`deadlines-service listening on port ${PORT}`);
+  try {
+    await producer.connect();
+    console.log("[KAFKA] Deadlines producer connected successfully.");
+  } catch (error) {
+    console.error("[KAFKA ERROR] Producer failed to connect:", error);
+  }
 });
