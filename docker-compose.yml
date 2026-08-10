@@ -109,6 +109,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    ports:
+      - "4001:4001"
 
 
   caddy:
@@ -153,6 +155,8 @@ services:
         condition: service_healthy
       kafka-init:
         condition: service_completed_successfully
+    ports:
+      - "3001:3001"
 
   liaison-2:
     build: ./liaison-service
@@ -177,6 +181,7 @@ services:
         condition: service_healthy
       kafka-init:
         condition: service_completed_successfully
+
   liaison-3:
     build: ./liaison-service
     healthcheck:

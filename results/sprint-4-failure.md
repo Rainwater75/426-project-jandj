@@ -23,3 +23,6 @@ curl -X POST http://localhost:8080/liaison/contact \
 ```bash
    $env:FAILURE_MODE="none"
 ```
+
+## 4. How the System Responds and Comparison to Real World
+The failure kills the work process immediately and an error is returned. A real system would probably retry the process at least once before returning failure to the user since contact is an externally facing service that in practicality has a higher chance of failure. 
