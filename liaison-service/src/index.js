@@ -5,9 +5,11 @@ import path from 'path';
 import { stringify } from 'querystring';
 import { AssertionError } from "assert/strict";
 import { Kafka } from "kafkajs";
+import { logger, requestLogger } from "./logger.js";
 
 const app = express();
 app.use(express.json());
+app.use(requestLogger);
 
 const PORT = process.env.PORT || 3001;
 const SIMULATED_LATENCY = process.env.SIMULATED_LATENCY || 1500;
@@ -39,11 +41,13 @@ function simulateWork(latencyMs = SIMULATED_LATENCY) {
 }
 
 
-// returns that the service is healthy
+// for the global health check
 app.get("/health", (req, res) => {
     return res.status(200).json({ status: "ok" });
 });
 
+// for the caddy health check
+// EXCLUDED FROM LOGGING BECAUSE IT CLOGS THE TERMINAL SEE logger.js
 app.get("/liaison/health", (req, res) => {
     return res.status(200).json({ status: "ok", service: "liaison-service", handledBy: REPLICA_ID });
 });
@@ -56,6 +60,7 @@ app.get("/liaison/match", async (req, res) => {
     // the query parameters used to search the area for potential assignees 
     const { zipCode, neighborhood }  = req.query; 
 
+    logger.info("Received match request", { zipCode, neighborhood, handledBy: REPLICA_ID });
     // runs the "search algorithm" that determines the best match or a list of matches 
     await simulateWork();
 
@@ -64,6 +69,7 @@ app.get("/liaison/match", async (req, res) => {
     // eligibleAssingees: array of objects representing the assignee candidates that qualify to purcahse the building legally under TOPA
         // each object will have fields such as: id, name, focusArea, email, maxAcquisitonBudget, activeStatus
     // timestamp: the time the work finished 
+    logger.info("Match request processed", { handedBy: REPLICA_ID, matchedCount: MOCK_ASSIGNEES.length });
     return res.status(200).json({
         query: { zipCode: zipCode, neighborhood: neighborhood },
         matchedCount: MOCK_ASSIGNEES.length, 
@@ -81,17 +87,20 @@ app.post("/liaison/contact", async (req, res) => {
     const { assigneeId, tenantAssociationId, message } = req.body; 
 
     if (!assigneeId || !tenantAssociationId) {
+        logger.error("Missing required fields for contact request", new Error("Missing required fields"), { handledBy: REPLICA_ID });
         return res.status(400).json({ error: "Missing required fields: assigneeId and tenantAssociationId" });
     }
 
+    logger.info("Received contact request", { assigneeId, tenantAssociationId, handledBy: REPLICA_ID });
+
     try {
         if (FAILURE_MODE === "fail") {
-            console.log(`[FAULT] inducing failure for ${REPLICA_ID}`);
+            logger.error("[FAIL] Induced failure mode enabled, rejecting request", new Error("Induced failure mode"), { handledBy: REPLICA_ID });
             return res.status(503).json({ success: false, error: "Inducedx failure mode enabled", handledBy: REPLICA_ID });
         }
 
         if (FAILURE_MODE === "slow") {
-            console.log(`[FAULT] inducing higher latency for ${REPLICA_ID}`);
+            logger.info("[SLOW] Induced slow mode enabled, simulating latency", { latencyMs: FAILURE_LATENCY_MS, handledBy: REPLICA_ID });
             await simulateWork(FAILURE_LATENCY_MS);
         } else {
             await simulateWork();
@@ -132,7 +141,7 @@ app.post("/liaison/contact", async (req, res) => {
             ],
         });
 
-        console.log(`[KAFKA] published assignee contact event for ${REPLICA_ID}`);
+        logger.info("[KAFKA] Published assignee contact event", { handledBy: REPLICA_ID });
         return res.status(202).json({
             success: true,
             status: "queued",
@@ -153,12 +162,12 @@ app.post("/liaison/contact", async (req, res) => {
 
 
 app.listen(PORT, async () => {
-    console.log(`liaison-service replica: ${REPLICA_ID} listening on port: ${PORT}`);
+    logger.info("liaison-service replica started", { handledBy: REPLICA_ID, port: PORT });
     try {
         await producer.connect();
-        console.log("[KAFKA] Liaison producer connected successfully.");
+        logger.info("[KAFKA] Liaison producer connected successfully.", { handledBy: REPLICA_ID });
     } catch (error) {
-        console.error("[KAFKA ERROR] Producer failed to connect:", error);
+        logger.error("[KAFKA ERROR] Producer failed to connect:", error, { handledBy: REPLICA_ID });
     }
 });
     
@@ -166,7 +175,6 @@ app.listen(PORT, async () => {
 // tests for match and contact 
 
 //for i in {1..6}; do (curl -s -H "Connection: close" "http://localhost:8080/liaison/match?zipCode=02108&neighborhood=Boston"; echo "") & done; wait
-// time (for i in {1..6}; do curl -s -H "Connection: close" "http://localhost:8080/liaison/match?zipCode=02108&neighborhood=Boston" & done; wait)
 
 // curl -X POST http://localhost:3001/liaison/contact \
 //   -H "Content-Type: application/json" \
