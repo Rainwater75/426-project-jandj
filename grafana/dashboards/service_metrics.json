@@ -1,0 +1,64 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "title": "Service Metrics",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "time": { "from": "now-15m", "to": "now" },
+  "refresh": "5s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request Rate by Instance (RPS)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "expr": "sum(rate(http_requests_total{path=~\"/.*\"}[5m])) by (instance)",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Error Rate by Instance (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "expr": "sum(rate(http_requests_total{status!~\"2..\"}[5m])) by (instance) / sum(rate(http_requests_total[5m])) by (instance)",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "p95 Latency by Instance",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, instance))",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    }
+  ]
+}
