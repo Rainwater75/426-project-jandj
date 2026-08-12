@@ -1,10 +1,13 @@
 import express from "express";
 import { createClient } from "redis";
 import { logger, requestLogger } from "./logger.js";
+import { metricsMiddleware, metricsEndpoint } from "./metrics.js";
 
 const app = express();
 app.use(express.json());
 app.use(requestLogger);
+app.use(metricsMiddleware);
+
 let healthy = false;
 
 const PORT = process.env.PORT || 4000;
@@ -359,6 +362,8 @@ app.get("/health", (req, res) => {
 app.get("/get_user", get_user);
 
 app.get("/get_TA", get_TA);
+
+app.get("/metrics", metricsEndpoint);
 
 app.listen(PORT, () => {
   logger.info(`association-service-${CONTAINER_ID} listening on port ${PORT}`);

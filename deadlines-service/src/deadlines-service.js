@@ -1,10 +1,12 @@
 import express from "express";
 import { Kafka } from "kafkajs";
 import { logger, requestLogger } from "./logger.js";
+import { metricsMiddleware, metricsEndpoint } from "./metrics.js";
 
 const app = express();
 app.use(express.json());
 app.use(requestLogger);
+app.use(metricsMiddleware);
 
 const PORT = process.env.PORT || 3002;
 const KAFKA_BROKER = process.env.KAFKA_BROKER || "kafka:19092";
@@ -101,6 +103,8 @@ app.get("/health", (req, res) => {
 });
 
 app.post("/ta_admin_digest", ta_admin_digest);
+
+app.get("/metrics", metricsEndpoint);
 
 app.listen(PORT, async () => {
   logger.info(`deadlines-service listening on port ${PORT}`);

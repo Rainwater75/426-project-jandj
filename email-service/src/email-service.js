@@ -2,10 +2,12 @@ import express from "express";
 import nodemailer from "nodemailer";
 import { Kafka } from "kafkajs";
 import { logger, requestLogger } from "./logger.js";
+import { metricsMiddleware, metricsEndpoint } from "./metrics.js";
 
 const app = express();
 app.use(express.json());
 app.use(requestLogger);
+app.use(metricsMiddleware);
 
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PASS = process.env.SMTP_PASS;
@@ -285,6 +287,8 @@ const startKafkaConsumer = async () => {
 app.get("/health", (req, res) => {
   return res.status(200).json({ status: "ok" });
 });
+
+app.get("/metrics", metricsEndpoint);
 
 app.listen(PORT, async () => {
   logger.info(`email-ambassador running on port ${PORT}`);
