@@ -85,62 +85,7 @@ Summary: in their current states, the get_user and get_TA endpoints of associati
 
 
 ## liason-service
-
-
-         /\      Grafana   /‾‾/  
-    /\  /  \     |\  __   /  /   
-   /  \/    \    | |/ /  /   ‾‾\ 
-  /          \   |   (  |  (‾)  |
- / __________ \  |_|\_\  \_____/ 
-
-
-     execution: local
-        script: loadtest.js
-        output: -
-
-     scenarios: (100.00%) 1 scenario, 20 max VUs, 1m0s max duration (incl. graceful stop):
-              * default: 20 looping VUs for 30s (gracefulStop: 30s)
-
-
-
-  █ THRESHOLDS 
-
-    http_req_duration
-    ✓ 'p(95)<2000' p(95)=1.5s
-
-    http_req_failed
-    ✓ 'rate<0.01' rate=0.00%
-
-
-  █ TOTAL RESULTS 
-
-    checks_total.......: 380     12.4457/s
-    checks_succeeded...: 100.00% 380 out of 380
-    checks_failed......: 0.00%   0 out of 380
-
-    ✓ status is 2xx
-
-    HTTP
-    http_req_duration..............: avg=1.5s min=1.5s med=1.5s max=1.51s p(90)=1.5s  p(95)=1.5s 
-      { expected_response:true }...: avg=1.5s min=1.5s med=1.5s max=1.51s p(90)=1.5s  p(95)=1.5s 
-    http_req_failed................: 0.00%  0 out of 380
-    http_reqs......................: 380    12.4457/s
-
-    EXECUTION
-    iteration_duration.............: avg=1.6s min=1.6s med=1.6s max=1.62s p(90)=1.61s p(95)=1.61s
-    iterations.....................: 380    12.4457/s
-    vus............................: 20     min=20       max=20
-    vus_max........................: 20     min=20       max=20
-
-    NETWORK
-    data_received..................: 208 kB 6.8 kB/s
-    data_sent......................: 57 kB  1.9 kB/s
-
-
-
-
-running (0m30.5s), 00/20 VUs, 380 complete and 0 interrupted iterations
-default ✓ [======================================] 20 VUs  30s
+see above for test details
 
 ### check
 - reliability: stated SLO seeks $success > 99.9%$ . Load test shows reliability of 100%
