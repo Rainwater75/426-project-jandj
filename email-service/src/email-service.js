@@ -1,9 +1,11 @@
 import express from "express";
 import nodemailer from "nodemailer";
 import { Kafka } from "kafkajs";
+import { logger, requestLogger } from "./logger.js";
 
 const app = express();
 app.use(express.json());
+app.use(requestLogger);
 
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PASS = process.env.SMTP_PASS;
@@ -62,10 +64,12 @@ const compileAndSendDigest = async ({ admin_email, admin_name, property_name, de
     // return res.status(400).json({
     //   error: "Missing required fields: admin_email, property_name, and non-empty deadlines array",
     // });
+    logger.error("Missing required fields for compileAndSendDigest", new Error("Missing required fields"), { admin_email, property_name, deadlines });
     throw new Error("Missing required fields");
   }
 
-  console.log("sending TA Admin digest...");
+  // added context is too long
+  logger.info("Compiling digest email");
   const sorted_deadlines = [...deadlines].sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
 
   //compose deadline digest
@@ -119,6 +123,7 @@ const compileAndSendDigest = async ({ admin_email, admin_name, property_name, de
       </div>
     `;
 
+  logger.info("Compiling complete, sending digest email");
   return transporter.sendMail({
     from: process.env.DEFAULT_FROM_EMAIL,
     to: admin_email,
@@ -129,6 +134,7 @@ const compileAndSendDigest = async ({ admin_email, admin_name, property_name, de
 
 const contactAssigneeCandidate = async ({ associationId, assigneeId, message }) => {
   if (!associationId || !assigneeId) {
+    logger.error("Missing required fields for contactAssigneeCandidate", new Error("Missing required fields"), { associationId, assigneeId });
     throw new Error("Missing required fields");
   }
 
@@ -149,6 +155,7 @@ const contactAssigneeCandidate = async ({ associationId, assigneeId, message }) 
     },
   ];
 
+  logger.info("Contacting assignee candidate", { associationId, assigneeId });
   const result = await compileAndSendDigest({
     admin_email: candidate.admin_email,
     admin_name: candidate.admin_name,
@@ -157,10 +164,11 @@ const contactAssigneeCandidate = async ({ associationId, assigneeId, message }) 
     custom_message: message || " ",
   });
 
+  logger.info("Finished contacting assignee candidate");
   return {
     success: true,
     messageId: result.messageId,
-    type: "contact_asignee_candidate",
+    type: "contact_assignee_candidate",
   };
 };
 
@@ -168,12 +176,15 @@ const contactAssigneeCandidate = async ({ associationId, assigneeId, message }) 
 app.post("/email_deadline_digest", async (req, res) => {
   try {
     const { admin_email, admin_name, property_name, deadlines } = req.body;
+
+    logger.info("Received request to send TOPA deadline digest", { admin_email, property_name});
+
     //compile email HTML and send
     const result = await compileAndSendDigest({ admin_email, admin_name, property_name, deadlines });
 
     return res.status(200).json({ success: true, messageId: result.messageId, type: "ta_admin_digest_notification" });
   } catch (error) {
-    console.error("TOPA digest notification error:", error);
+    logger.error("TOPA digest notification error:", error);
     res.status(500).json({
       error: "Failed to send TOPA deadline digest",
       message: error.message,
@@ -185,10 +196,12 @@ app.post("/email_deadline_digest", async (req, res) => {
 app.post("/contact_assignee_candidate", async (req, res) => {
   try {
     const { associationId, assigneeId, message } = req.body;
+    logger.info("Received request to contact assignee candidate", { associationId, assigneeId });
+
     const result = await contactAssigneeCandidate({ associationId, assigneeId, message });
     return res.status(200).json(result);
   } catch (error) {
-    console.error("Assignee candidate routing error:", error);
+    logger.error("Assignee candidate routing error:", error);
     res.status(500).json({
       error: "Failed to send TOPA assignee candidate email",
       message: error.message,
@@ -217,10 +230,10 @@ const startKafkaConsumer = async () => {
 
   while (!isConnected) {
     try {
-      console.log("[KAFKA] Attempting to connect email-service consumer...");
+      logger.info("[KAFKA] Attempting to connect email-service consumer...");
       await consumer.connect();
       
-      console.log("[KAFKA] Consumer connected. Subscribing to topics...");
+      logger.info("[KAFKA] Consumer connected. Subscribing to topics...");
       await consumer.subscribe({ topic: "deadline.digest", fromBeginning: true });
       await consumer.subscribe({ topic: "assignee.contact", fromBeginning: true });
 
@@ -231,26 +244,26 @@ const startKafkaConsumer = async () => {
             const handler = handler_map.get(topic);
 
             if (!handler) {
-              console.log(`[ERROR] Handler not found for topic ${topic}`);
+              logger.error("Handler not found for topic", new Error("Handler not found"), { topic: topic });
               return;
             }
 
-            console.log(`[KAFKA] received message on topic ${topic}`);
+            logger.info("[KAFKA] received message", { topic: topic });
             await handler(content);
-            console.log(`[KAFKA] processed message on topic ${topic}`);
+            logger.info("[KAFKA] job completed", { topic: topic });
           } catch (err) {
-            console.log(`[ERROR] Failed to process Kafka message: ${err}`);
+            logger.error("[KAFKA ERROR] Failed to process Kafka message", err);
           }
         },
       });
 
-      console.log("[KAFKA] Consumer is active and listening.");
+      logger.info("[KAFKA] Consumer is active and listening.");
       isConnected = true;
     } catch (error) {
       if (error.code === 3 || error.code === 15 || error.type === 'UNKNOWN_TOPIC_OR_PARTITION') {
-        console.warn("[KAFKA WARNING] Broker metadata or topics initializing. Retrying in 3 seconds...");
+        logger.info("[KAFKA WARNING] Retrying to start kafka in 3 seconds...");
       } else {
-        console.error("[KAFKA CRITICAL ERROR] Failed to initialize consumer:", error);
+        logger.error("[KAFKA ERROR] Failed to initialize consumer:", error);
       }
       await new Promise((resolve) => setTimeout(resolve, 3000));
     }
@@ -262,6 +275,6 @@ app.get("/health", (req, res) => {
 });
 
 app.listen(PORT, async () => {
-  console.log(`email-ambassador running on port ${PORT}`);
+  logger.info(`email-ambassador running on port ${PORT}`);
   await startKafkaConsumer();
 });

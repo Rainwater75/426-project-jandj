@@ -107,7 +107,7 @@ app.post("/liaison/contact", async (req, res) => {
         }
 
     // send to the ambassador which will send the email
-        // const ambassadorResponse = await fetch("http://email-service:3000/contact_assignee_candidate", {
+        // const ambassadorResponse = await fetch(EMAIL_SERVICE_URL, {
         //     method: "POST",
         //     headers: { "Content-Type": "application/json" },
         //     body: JSON.stringify({ associationId: tenantAssociationId, assigneeId: assigneeId, message: message })
