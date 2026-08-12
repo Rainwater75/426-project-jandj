@@ -1,4 +1,17 @@
 services:
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "9000:3000" #internally, grafana listens on port 3000 by default
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
   prometheus:
     image: prom/prometheus
     volumes:
@@ -16,7 +29,11 @@ services:
 
   kafka:
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1",
+        ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -126,7 +143,6 @@ services:
         condition: service_healthy
     ports:
       - "4001:4001"
-
 
   caddy:
     image: caddy:2
