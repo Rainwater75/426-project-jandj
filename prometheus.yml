@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  # - job_name: "association-service"
+  #   static_configs:
+  #     - targets: ["association-0:4000", "association-1:4001"]
+
+  # - job_name: 'deadlines-service'
+  #   static_configs:
+  #     - targets: ['deadlines-service:3002']
+
+  # - job_name: 'email-service'
+  #   static_configs:
+  #     - targets: ['email-service:3000']
+
+  - job_name: 'liaison-service'
+    static_configs:
+      - targets: ['liaison-1:3001', 'liaison-2:3001', 'liaison-3:3001']

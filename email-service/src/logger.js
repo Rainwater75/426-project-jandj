@@ -49,7 +49,7 @@ export const requestLogger = (req, res, next) => {
     const startTime = Date.now();
 
     // caddy constatly checks the health endpoint so 3 lines are being printed to the console every few seconds, too much clog
-    if (req.path === "/health" || req.path === "/liaison/health") {
+    if (req.path === "/health" || req.path === "/liaison/health" || req.path === "/metrics") {
         return next(); 
     }
 

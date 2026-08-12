@@ -1,4 +1,19 @@
 services:
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - association-0
+      - association-1
+      - deadlines-service
+      - email-service
+      - liaison-1
+      - liaison-2
+      - liaison-3
+
   kafka:
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]

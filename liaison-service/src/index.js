@@ -6,10 +6,12 @@ import { stringify } from 'querystring';
 import { AssertionError } from "assert/strict";
 import { Kafka } from "kafkajs";
 import { logger, requestLogger } from "./logger.js";
+import { metricsMiddleware, metricsEndpoint } from "./metrics.js";
 
 const app = express();
 app.use(express.json());
 app.use(requestLogger);
+app.use(metricsMiddleware);
 
 const PORT = process.env.PORT || 3001;
 const SIMULATED_LATENCY = process.env.SIMULATED_LATENCY || 1500;
@@ -159,6 +161,8 @@ app.post("/liaison/contact", async (req, res) => {
         });
     }
 });
+
+app.get("/metrics", metricsEndpoint);
 
 
 app.listen(PORT, async () => {
