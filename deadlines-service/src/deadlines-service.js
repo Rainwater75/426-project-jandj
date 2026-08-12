@@ -1,8 +1,10 @@
 import express from "express";
 import { Kafka } from "kafkajs";
+import { logger, requestLogger } from "./logger.js";
 
 const app = express();
 app.use(express.json());
+app.use(requestLogger);
 
 const PORT = process.env.PORT || 3002;
 const KAFKA_BROKER = process.env.KAFKA_BROKER || "kafka:19092";
@@ -10,7 +12,7 @@ const KAFKA_BROKER = process.env.KAFKA_BROKER || "kafka:19092";
 const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
 const producer = kafka.producer();
 
-console.log(`environment: \n\tPORT=${PORT}`);
+logger.info(`environment: \n\tPORT=${PORT}`);
 
 //FOR SIMULATION PURPOSES ----------------------
 /**
@@ -49,7 +51,7 @@ const example_record = {
  * @param {express.Response} res
  */
 const ta_admin_digest = async (req, res) => {
-  console.log(`generating ta_admin_digest...`);
+  logger.info(`generating ta_admin_digest...`);
   //TODO:
   // 1. gather email, name, propertyName, and deadlines from database for given TA
   // 2. implement idempotency mechanism
@@ -85,7 +87,7 @@ const ta_admin_digest = async (req, res) => {
     ],
   });
 
-  console.log("[KAFKA] published deadline digest event");
+  logger.info("[KAFKA] published deadline digest event");
   return res.status(202).json({
     success: true,
     status: "queued",
@@ -94,17 +96,18 @@ const ta_admin_digest = async (req, res) => {
 };
 
 app.get("/health", (req, res) => {
+  logger.info("Health check requested");
   return res.status(200).json({ status: "ok" });
 });
 
 app.post("/ta_admin_digest", ta_admin_digest);
 
 app.listen(PORT, async () => {
-  console.log(`deadlines-service listening on port ${PORT}`);
+  logger.info(`deadlines-service listening on port ${PORT}`);
   try {
     await producer.connect();
-    console.log("[KAFKA] Deadlines producer connected successfully.");
+    logger.info("[KAFKA] Deadlines producer connected successfully.");
   } catch (error) {
-    console.error("[KAFKA ERROR] Producer failed to connect:", error);
+    logger.error("[KAFKA ERROR] Producer failed to connect:", error);
   }
 });
