@@ -9,7 +9,7 @@
 | jkaros@umass.edu.com | sh34v3          |
 | jjpark@umass.edu     | rainwater75     |
 
-### Project Documentation
+## Project Documentation
 
 - [Refined Project Description](docs/PROJECT.md)
 - [Initial Service List](docs/SERVICES.md)
@@ -22,3 +22,29 @@ If they decide to assign their rights, the assignee has a limited timeframe (fre
 To exercise or assign TOPA rights, a solid majority of households in the building must actively cooperate. Getting dozens—or hundreds—of neighbors to agree on a single path forward is a massive community-organizing challenge.
 
 TOPA matching is a web application that allows Tenants of Massachusetts to quickly exercise their TOPA rights. Using it they can organize a tenant association, communicate, vote, and file a statement of interest, while also helping match the TA to appropriate assignees. This application could help tenants overcome the logistic challenges of asserting their TOPA rights and more easily preserve their place of residence.
+
+
+## Environment Variables
+- `PORT`: port for the service to listen on. example: 4000, 3002, 3001, 3000. Without port, service will fail because nothing will be able to access it.
+- `REDIS_URL`: target port for caching. example: `redis://localhost:6379`. Without, association-service will not be able to establish a connection with the cache and then throw an error.
+- `KAFKA_BROKER`: target pointer for kafka go between. ex: `kafka:19092`. Without, services would need to communicate directly which would be a routing pain.
+- `FAILURE_MODE`: feature flag that induces manual mock faults ex: `LIVE_CACHE_DOWN`, `LIVE_DATABASE_DOWN`, `fail`, `slow`, `null`. Without, services would not be able to trigger induced failure mode.
+- `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` / `SMTP_PORT` / `SMTP_USER` / `SMTP_SECURE`: mail engine parameters. Email will fail to deliver if missing.
+- `DEFAULT_FROM_EMAIL` / `DEFAULT_REPLY_TO` 
+- `EMAIL_SERVICE_URL` target for email service requests. ex: `http://email-service:3000/contact_assignee_candidate`. Although commented out right now, the service would not be able to make fetch requests without a target url. 
+
+every other environment var is an internal metadata var
+
+## Setup & Running
+```bash
+docker compose up --build
+```
+
+## .env
+need a .env file for the system to work correctly
+
+## Running Load Tests
+```bash
+k6 run .\load-tests\sprint-3-load.js
+k6 run .\load-tests\sprint-5-load.js
+```
