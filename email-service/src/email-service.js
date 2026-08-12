@@ -18,9 +18,21 @@ const DEFAULT_REPLY_TO = process.env.DEFAULT_REPLY_TO;
 const KAFKA_BROKER = process.env.KAFKA_BROKER || "kafka:19092";
 const GROUP_ID = process.env.GROUP_ID || "email-group";
 
-console.log(
-  `environment: \n\tSMTP_HOST=${SMTP_HOST}\n\tSMTP_PASS=${SMTP_PASS}\n\tSMTP_USER=${SMTP_USER}\n\tSMTP_SECURE=${SMTP_SECURE}\n\tSMTP_PORT=${SMTP_PORT}\n\tPORT=${PORT}\n\tDEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}\n\tDEFAULT_REPLY_TO=${DEFAULT_REPLY_TO}\n\tKAFKA_BROKER=${KAFKA_BROKER}\n\tGROUP_ID=${GROUP_ID}`
-);
+// console.log(
+//   `environment: \n\tSMTP_HOST=${SMTP_HOST}\n\tSMTP_PASS=${SMTP_PASS}\n\tSMTP_USER=${SMTP_USER}\n\tSMTP_SECURE=${SMTP_SECURE}\n\tSMTP_PORT=${SMTP_PORT}\n\tPORT=${PORT}\n\tDEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}\n\tDEFAULT_REPLY_TO=${DEFAULT_REPLY_TO}\n\tKAFKA_BROKER=${KAFKA_BROKER}\n\tGROUP_ID=${GROUP_ID}`
+// );
+logger.info("Initializing email-service instance", {
+  SMTP_HOST,
+  SMTP_PASS,
+  SMTP_USER,
+  SMTP_SECURE,
+  SMTP_PORT,
+  PORT,
+  DEFAULT_FROM_EMAIL,
+  DEFAULT_REPLY_TO,
+  KAFKA_BROKER,
+  GROUP_ID
+});
 
 const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
 const consumer = kafka.consumer({ groupId:GROUP_ID });
