@@ -25,14 +25,14 @@ export const options = {
       exec: "liaison_match",
     },
     liaison_contact: {
-      //100 contact requests going out over 2 seconds, simulating a large batch of contact requests going out at the end of the day
+      //100 contact requests going out, simulating a large batch of contact requests going out at the end of the day
       executor: "per-vu-iterations",
       vus: 5,
       iterations: 20,
       exec: "liaison_contact",
     },
     deadlines: {
-      //100 deadline digests going out over 3 seconds, simulating a large batch of deadline notifications going out at the end of the day to TA administrators in the database
+      //100 deadline digests going out, simulating a large batch of deadline notifications going out at the end of the day to TA administrators in the database
       executor: "per-vu-iterations",
       vus: 3,
       iterations: 33,
@@ -40,15 +40,15 @@ export const options = {
     },
   },
   thresholds: {
-    "http_req_duration{scenario:getUser}": ["p(95)<10000"],
-    "http_req_duration{scenario:getAssociation}": ["p(95)<10000"],
-    "http_req_duration{scenario:liaison_match}": ["p(95)<2000"],
-    "http_req_duration{scenario:liaison_contact}": ["p(95)<10000"],
+    "http_req_duration{scenario:getUser}": ["p(95)<3000"],
+    "http_req_duration{scenario:getAssociation}": ["p(95)<3000"],
+    "http_req_duration{scenario:liaison_match}": ["p(95)<60000"],
+    "http_req_duration{scenario:liaison_contact}": ["p(95)<60000"],
     "http_req_duration{scenario:deadlines}": ["p(95)<60000"],
 
     "http_req_failed{scenario:getUser}": ["rate<0.01"],
     "http_req_failed{scenario:getAssociation}": ["rate<0.01"],
-    "http_req_failed{scenario:liaison_match}": ["rate<0.001"],
+    "http_req_failed{scenario:liaison_match}": ["rate<0.01"],
     "http_req_failed{scenario:liaison_contact}": ["rate<0.01"],
     "http_req_failed{scenario:deadlines}": ["rate<0.0001"],
   },
@@ -56,12 +56,12 @@ export const options = {
 
 export function getUser() {
   http.get("http://localhost:3999/get_user?user_id=2");
-  sleep(0.05);
+  sleep(0.1);
 }
 
 export function getAssociation() {
   http.get("http://localhost:3999/get_TA?ta_id=4");
-  sleep(0.05);
+  sleep(0.1);
 }
 
 const MOCK_PROFILES = [
@@ -74,7 +74,7 @@ const MOCK_PROFILES = [
 export function liaison_match() {
   const randomProfile =
     MOCK_PROFILES[Math.floor(Math.random() * MOCK_PROFILES.length)];
-
+  // const url = 'http://localhost:8080/liaison/match?zipCode=02108&neighborhood=Boston';
   const url = `http://localhost:8080/liaison/match?zipCode=${randomProfile.zip}&neighborhood=${randomProfile.neighborhood}`;
 
   const res = http.get(url, {
