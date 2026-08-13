@@ -115,16 +115,18 @@ Summary: in their current states, the get_user and get_TA endpoints of associati
 ## caddy --> liaison --> kafka
 
 ### match
-- reliability: stated SLO seeks $success > 99.9%$ . Load test shows reliability of 100%
-- latency: stated SLO seeks $P95 < 1min$. Load test shows $P95 ~ 1.5s$
+- reliability: stated SLO seeks $success > 99.9%$ . Load test shows reliability of ___%
+- latency: stated SLO seeks $P95 < 1min$. Load test shows $P95 ~ ____s$
 
 ### contact
-- reliability:stated SLO seeks $success > 99.9%$ . Load test shows reliability of 100%
-- latency:stated SLO seeks $P95 < 1min$. Load test shows $P95 ~ 1.5s$
+- reliability:stated SLO seeks $success > 99.9%$ . Load test shows reliability of ___%
+- latency:stated SLO seeks $P95 < 1min$. Load test shows $P95 ~ ____s$
 
 
 ### Summary
-in it's current state, the match endpoint of liaison-service does operate inside of its SLOs while being load balanced via Caddy. This is due to its work being simulated on the backend with a hard coded delay of 1500ms. This will likely change when the backend is implemented further.
+______
+
+
 
 ## deadlines --> kafka
 
