@@ -19,9 +19,9 @@ logger.info(`environment: \n\tPORT=${PORT}`);
 //FOR SIMULATION PURPOSES ----------------------
 /**
  * simulates work
- * @param {Number} latencyMs - simulated latency in ms, default to 1500
+ * @param {Number} latencyMs - simulated latency in ms, default to 500
  */
-function simulateWork(latencyMs = 1500) {
+function simulateWork(latencyMs = 500) {
   return new Promise((resolve) => setTimeout(resolve, latencyMs));
 }
 
@@ -60,7 +60,7 @@ const ta_admin_digest = async (req, res) => {
   // 3. implement at least once behavior
   // 4. add functionality for case in which there are multiple TA admins
 
-  await simulateWork(2000); //simulates getting record from the database and creating digest object
+  await simulateWork(300); //simulates getting record from the database and creating digest object
 
   const digest = example_record;
 
