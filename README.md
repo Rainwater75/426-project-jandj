@@ -29,8 +29,14 @@ TOPA matching is a web application that allows Tenants of Massachusetts to quick
 - `REDIS_URL`: target port for caching. example: `redis://localhost:6379`. Without, association-service will not be able to establish a connection with the cache and then throw an error.
 - `KAFKA_BROKER`: target pointer for kafka go between. ex: `kafka:19092`. Without, services would need to communicate directly which would be a routing pain.
 - `FAILURE_MODE`: feature flag that induces manual mock faults ex: `LIVE_CACHE_DOWN`, `LIVE_DATABASE_DOWN`, `fail`, `slow`, `null`. Without, services would not be able to trigger induced failure mode.
-- `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` / `SMTP_PORT` / `SMTP_USER` / `SMTP_SECURE`: mail engine parameters. Email will fail to deliver if missing.
-- `DEFAULT_FROM_EMAIL` / `DEFAULT_REPLY_TO` 
+- `SMTP_HOST`: secure mail protocol server url (Gmail). Ex: smtp.gmail.com. email will fail to send if missing.
+- `SMTP_USER`: email account username credential. ex: example@gmail.com. Email will fail to send if missing.
+- `SMTP_PASS `: email account password credential. Ex: sjjp fjaj qoie vlcl. Email will fail to send if missing
+- `SMTP_PORT` : nodemailer asks SMTP_HOST to send emails over this port (default port for SMTPS traffic). Ex: 465. Email will fail to send if missing
+- `SMTP_SECURE`: nodemailer asks SMTP_HOST to use SMTPS instead of regular SMTP (required for gmail). ex: true. If missing nodemailer will default to false. 
+- `DEFAULT_FROM_EMAIL`: who the email will be listed from. Ex: example@gmail.com. If missing, will default to empty. 
+- `DEFAULT_REPLY_TO`: where reply emails will be directed. Ex: replyExample@gmail.com. If missing, contacted user may be unable to reply.
+
 - `EMAIL_SERVICE_URL` target for email service requests. ex: `http://email-service:3000/contact_assignee_candidate`. Although commented out right now, the service would not be able to make fetch requests without a target url. 
 
 every other environment var is an internal metadata var
