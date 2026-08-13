@@ -5,5 +5,5 @@ const ta_admin_digest = await (
   })
 ).json();
 
-console.log(`recieved : ${JSON.stringify(ta_admin_digest)}`);
+console.log(`received : ${JSON.stringify(ta_admin_digest)}`);
 console.log("done testing");

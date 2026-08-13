@@ -72,19 +72,14 @@ const ta_admin_digest = async (req, res) => {
 
   // res.json(await response.json());
 
-  // Kafka message schema: payload: {emailId: number, operation: string, message: Object}
-  // emailId: unique id of the email job
-  // operation: handler to call
-  // content: message content Object to pass to endpoint
+  // Kafka message schema: payload: {value: Object}
+  // value: message content Object to pass to endpoint
 
   await producer.send({
-    topic: "emails",
+    topic: "deadline.digest",
     messages: [
       {
-        value: JSON.stringify({
-          operation: "deadline.digest",
-          content: digest,
-        }),
+        value: JSON.stringify(digest),
       },
     ],
   });

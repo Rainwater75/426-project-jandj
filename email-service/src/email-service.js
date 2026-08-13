@@ -33,19 +33,14 @@ logger.info("Initializing email-service instance", {
   DEFAULT_FROM_EMAIL,
   DEFAULT_REPLY_TO,
   KAFKA_BROKER,
-  GROUP_ID
+  GROUP_ID,
 });
 
 const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
-const consumer = kafka.consumer({ groupId:GROUP_ID });
+const consumer = kafka.consumer({ groupId: GROUP_ID });
 
-
-
-// expect Kafka messages like: {emailId: number, function: string, message: Object}
-// emailId: unique id of the email job
-// endpoint: endpoint to call
+// expect Kafka messages like: {content: Object}
 // content: message content Object to pass to endpoint
-
 
 //initialize email client
 //NOTE: gen ai was used to generate example code for use of
@@ -71,30 +66,49 @@ const transporter = nodemailer.createTransport({
  * @param {express.Request} req
  * @param {express.Response} res
  */
-const compileAndSendDigest = async ({ admin_email, admin_name, property_name, deadlines, custom_message }) => {
-
+const compileAndSendDigest = async ({
+  admin_email,
+  admin_name,
+  property_name,
+  deadlines,
+  custom_message,
+}) => {
   //input validation
-  if (!admin_email || !property_name || !Array.isArray(deadlines) || deadlines.length === 0) {
+  if (
+    !admin_email ||
+    !property_name ||
+    !Array.isArray(deadlines) ||
+    deadlines.length === 0
+  ) {
     // return res.status(400).json({
     //   error: "Missing required fields: admin_email, property_name, and non-empty deadlines array",
     // });
-    logger.error("Missing required fields for compileAndSendDigest", new Error("Missing required fields"), { admin_email, property_name, deadlines });
+    logger.error(
+      "Missing required fields for compileAndSendDigest",
+      new Error("Missing required fields"),
+      { admin_email, property_name, deadlines },
+    );
     throw new Error("Missing required fields");
   }
 
   // added context is too long
   logger.info("Compiling digest email");
-  const sorted_deadlines = [...deadlines].sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+  const sorted_deadlines = [...deadlines].sort(
+    (a, b) => new Date(a.due_date) - new Date(b.due_date),
+  );
 
   //compose deadline digest
   const deadline_digest_html = sorted_deadlines
     .map((item) => {
-      const formattedDate = new Date(item.due_date).toLocaleDateString(undefined, {
-        weekday: "short",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
+      const formattedDate = new Date(item.due_date).toLocaleDateString(
+        undefined,
+        {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        },
+      );
 
       return `
           <tr style="border-bottom: 1px solid #e0e0e0;">
@@ -146,26 +160,39 @@ const compileAndSendDigest = async ({ admin_email, admin_name, property_name, de
   });
 };
 
-const contactAssigneeCandidate = async ({ associationId, assigneeId, message }) => {
+const contactAssigneeCandidate = async ({
+  associationId,
+  assigneeId,
+  message,
+}) => {
   if (!associationId || !assigneeId) {
-    logger.error("Missing required fields for contactAssigneeCandidate", new Error("Missing required fields"), { associationId, assigneeId });
+    logger.error(
+      "Missing required fields for contactAssigneeCandidate",
+      new Error("Missing required fields"),
+      { associationId, assigneeId },
+    );
     throw new Error("Missing required fields");
   }
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
-  const candidate = { admin_email: "assignee@gmail.org", admin_name: "Assignee" };
+  const candidate = {
+    admin_email: "jsok475@gmail.com",
+    admin_name: "Assignee",
+  };
   const property = { property_name: "742 Evergreen Terrace" };
   const deadlinesList = [
     {
       title: "Expression of Interest Submission",
       due_date: "2026-08-10T17:00:00Z",
-      description: "Deadline for the tenant association to formally deliver our statement of interest to the owner.",
+      description:
+        "Deadline for the tenant association to formally deliver our statement of interest to the owner.",
     },
     {
       title: "Assignee Partnership Deadline",
       due_date: "2026-08-25T23:59:59Z",
-      description: "Last day to legally execute our rights assignment to a qualified non-profit developer.",
+      description:
+        "Last day to legally execute our rights assignment to a qualified non-profit developer.",
     },
   ];
 
@@ -186,17 +213,28 @@ const contactAssigneeCandidate = async ({ associationId, assigneeId, message }) 
   };
 };
 
-
 app.post("/email_deadline_digest", async (req, res) => {
   try {
     const { admin_email, admin_name, property_name, deadlines } = req.body;
 
-    logger.info("Received request to send TOPA deadline digest", { admin_email, property_name});
+    logger.info("Received request to send TOPA deadline digest", {
+      admin_email,
+      property_name,
+    });
 
     //compile email HTML and send
-    const result = await compileAndSendDigest({ admin_email, admin_name, property_name, deadlines });
+    const result = await compileAndSendDigest({
+      admin_email,
+      admin_name,
+      property_name,
+      deadlines,
+    });
 
-    return res.status(200).json({ success: true, messageId: result.messageId, type: "ta_admin_digest_notification" });
+    return res.status(200).json({
+      success: true,
+      messageId: result.messageId,
+      type: "ta_admin_digest_notification",
+    });
   } catch (error) {
     logger.error("TOPA digest notification error:", error);
     res.status(500).json({
@@ -210,9 +248,16 @@ app.post("/email_deadline_digest", async (req, res) => {
 app.post("/contact_assignee_candidate", async (req, res) => {
   try {
     const { associationId, assigneeId, message } = req.body;
-    logger.info("Received request to contact assignee candidate", { associationId, assigneeId });
+    logger.info("Received request to contact assignee candidate", {
+      associationId,
+      assigneeId,
+    });
 
-    const result = await contactAssigneeCandidate({ associationId, assigneeId, message });
+    const result = await contactAssigneeCandidate({
+      associationId,
+      assigneeId,
+      message,
+    });
     return res.status(200).json(result);
   } catch (error) {
     logger.error("Assignee candidate routing error:", error);
@@ -224,16 +269,14 @@ app.post("/contact_assignee_candidate", async (req, res) => {
 });
 
 const handler_map = new Map([
-  ['deadline.digest', compileAndSendDigest],
-  ['assignee.contact', contactAssigneeCandidate],
+  ["deadline.digest", compileAndSendDigest],
+  ["assignee.contact", contactAssigneeCandidate],
 ]);
-
 
 // expect Kafka messages like: payload: {emailId: number, function: string, message: Object}
 // emailId: unique id of the email job
 // endpoint: endpoint to call
 // content: message content Object to pass to endpoint
-
 
 await consumer.connect();
 await consumer.subscribe({ topic: "deadline.digest", fromBeginning: true });
@@ -246,10 +289,16 @@ const startKafkaConsumer = async () => {
     try {
       logger.info("[KAFKA] Attempting to connect email-service consumer...");
       await consumer.connect();
-      
+
       logger.info("[KAFKA] Consumer connected. Subscribing to topics...");
-      await consumer.subscribe({ topic: "deadline.digest", fromBeginning: true });
-      await consumer.subscribe({ topic: "assignee.contact", fromBeginning: true });
+      await consumer.subscribe({
+        topic: "deadline.digest",
+        fromBeginning: true,
+      });
+      await consumer.subscribe({
+        topic: "assignee.contact",
+        fromBeginning: true,
+      });
 
       await consumer.run({
         eachMessage: async ({ topic, message }) => {
@@ -258,7 +307,11 @@ const startKafkaConsumer = async () => {
             const handler = handler_map.get(topic);
 
             if (!handler) {
-              logger.error("Handler not found for topic", new Error("Handler not found"), { topic: topic });
+              logger.error(
+                "Handler not found for topic",
+                new Error("Handler not found"),
+                { topic: topic },
+              );
               return;
             }
 
@@ -274,7 +327,11 @@ const startKafkaConsumer = async () => {
       logger.info("[KAFKA] Consumer is active and listening.");
       isConnected = true;
     } catch (error) {
-      if (error.code === 3 || error.code === 15 || error.type === 'UNKNOWN_TOPIC_OR_PARTITION') {
+      if (
+        error.code === 3 ||
+        error.code === 15 ||
+        error.type === "UNKNOWN_TOPIC_OR_PARTITION"
+      ) {
         logger.info("[KAFKA WARNING] Retrying to start kafka in 3 seconds...");
       } else {
         logger.error("[KAFKA ERROR] Failed to initialize consumer:", error);
