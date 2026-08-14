@@ -136,3 +136,14 @@ In its current state, liaison hits all of its stated SLO targets. This being sai
 
 ### Summary
 In its current state, the only notification endpoint of `deadlines-service`, `ta_admin_digest` does meet all desired SLO targets. The service is able to effectively and reliably publish jobs to kafka which are consumed, resulting in emails sent. Albeit, we are only limited to observing what is in the system itself. Since we are using Google's SMTPS server via `nodemailer`, we currently don't have a way of measuring reliability or latency once the job is given to them. Google simply responds once the job is put into the outbound queue. Furthermore, this service is still working with a simulated database retrieval (hence the extremely consistent 2s latency performance across all percentiles). Wiring this service to live SQLite database would surely change performance across the board.
+
+
+## Comparison to `sprint-3-load-test`
+
+Adding the additional instrumentation in sprints 4 and 5 did not affect the consistency in which our services meet the SLOs. Nearly all services are generously below latency SLOs (which are admittedly relaxed) while still having no failed requests inside the system when load tested. This is even after increasing load test volume to 40vus @ 90s in our main system path, and 15vus @ 90s in ancillary paths.
+
+## Interpretation: Where is the bottleneck in the system? What would you do if you had another sprint?
+
+The addition of the kafka pub/sub system between notification producers and the email adapter allowed for lower response latency. No longer waiting on the adapter's response means we are no longer waiting for Google's SMTP server's response as well.
+
+In our current system design, sending a request to an instance of association-service is how we intend users and services to access data from the database. Although, right now this is implemented as simulated database reads with artificial delay. If we had another sprint, we would wire each instance of association service to an embedded SQLite db populated with large set of artificial data. Refactoring the load balancer to hash ring that shards requests would eliminate the need to have consensus between the database instances while also balancing the load.
