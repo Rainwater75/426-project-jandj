@@ -24,14 +24,13 @@ const FAILURE_LATENCY_MS = process.env.FAILURE_LATENCY_MS || 4000
 const kafka = new Kafka({ brokers: [KAFKA_BROKER] });
 const producer = kafka.producer();
 
-// ai generated btw
 const MOCK_ASSIGNEES = [
     {
-        id: "assignee-01",
-        name: "Greater Boston Community Land Trust",
+        id: "Boston1",
+        name: "Boston Nonprofit Organization",
         focusArea: "Boston",
-        contactEmail: " acquisitions@gbclt.org",
-        maxAcquisitionBudgetUSD: 5000000,
+        contactEmail: "BostonNonprofit@example.com",
+        maxAcquisitionBudgetUSD: 2000000,
         activeStatus: "Ready"
     },
 ]
