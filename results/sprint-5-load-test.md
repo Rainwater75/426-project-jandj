@@ -1,14 +1,15 @@
 ## association-service, liason-service load test of get_TA and get_user endpoints
 
-             /\      Grafana   /‾‾/
-        /\  /  \     |\  __   /  /
-       /  \/    \    | |/ /  /   ‾‾\
-      /          \   |   (  |  (‾)  |
-     / __________ \  |_|\_\  \_____/
+
+            /\      Grafana   /‾‾/
+       /\  /  \     |\  __   /  /
+      /  \/    \    | |/ /  /   ‾‾\
+     /          \   |   (  |  (‾)  |
+    / __________ \  |_|\_\  \_____/
 
 
         execution: local
-            script: sprint-5-load.js
+            script: .\load-tests\sprint-5-load.js
             output: -
 
         scenarios: (100.00%) 5 scenarios, 78 max VUs, 10m30s max duration (incl. graceful stop):
@@ -26,16 +27,16 @@
         ✓ 'p(95)<60000' p(95)=2s
 
         http_req_duration{scenario:getAssociation}
-        ✓ 'p(95)<10000' p(95)=3.72ms
+        ✓ 'p(95)<3000' p(95)=5.83ms
 
         http_req_duration{scenario:getUser}
-        ✓ 'p(95)<10000' p(95)=3.72ms
+        ✓ 'p(95)<3000' p(95)=5.77ms
 
         http_req_duration{scenario:liaison_contact}
-        ✓ 'p(95)<10000' p(95)=1.5s
+        ✓ 'p(95)<60000' p(95)=1.51s
 
         http_req_duration{scenario:liaison_match}
-        ✓ 'p(95)<2000' p(95)=1.5s
+        ✓ 'p(95)<60000' p(95)=1.5s
 
         http_req_failed{scenario:deadlines}
         ✓ 'rate<0.0001' rate=0.00%
@@ -50,52 +51,52 @@
         ✓ 'rate<0.01' rate=0.00%
 
         http_req_failed{scenario:liaison_match}
-        ✓ 'rate<0.001' rate=0.00%
+        ✓ 'rate<0.01' rate=0.00%
 
 
       █ TOTAL RESULTS
 
-        checks_total.......: 1054    11.538565/s
+        checks_total.......: 1054    11.527611/s
         checks_succeeded...: 100.00% 1054 out of 1054
         checks_failed......: 0.00%   0 out of 1054
 
         ✓ status is 2xx
 
         HTTP
-        http_req_duration................: avg=19.17ms min=458µs   med=1.61ms max=2.01s    p(90)=3.09ms  p(95)=4.01ms
-          { expected_response:true }.....: avg=19.17ms min=458µs   med=1.61ms max=2.01s    p(90)=3.09ms  p(95)=4.01ms
-          { scenario:deadlines }.........: avg=2s      min=2s      med=2s     max=2.01s    p(90)=2s      p(95)=2s
-          { scenario:getAssociation }....: avg=2.1ms   min=458µs   med=1.6ms  max=243.13ms p(90)=3ms     p(95)=3.72ms
-          { scenario:getUser }...........: avg=2.1ms   min=500µs   med=1.6ms  max=244.2ms  p(90)=2.98ms  p(95)=3.72ms
-          { scenario:liaison_contact }...: avg=1.5s    min=1.5s    med=1.5s   max=1.55s    p(90)=1.5s    p(95)=1.5s
-          { scenario:liaison_match }.....: avg=1.5s    min=1.49s   med=1.5s   max=1.54s    p(90)=1.5s    p(95)=1.5s
-        http_req_failed..................: 0.00%  0 out of 95553
+        http_req_duration................: avg=37.2ms   min=515.9µs  med=2.79ms   max=2.03s    p(90)=5.03ms   p(95)=6.62ms
+          { expected_response:true }.....: avg=37.2ms   min=515.9µs  med=2.79ms   max=2.03s    p(90)=5.03ms   p(95)=6.62ms
+          { scenario:deadlines }.........: avg=2s       min=2s       med=2s       max=2.03s    p(90)=2s       p(95)=2s
+          { scenario:getAssociation }....: avg=3.65ms   min=523.2µs  med=2.76ms   max=276.7ms  p(90)=4.75ms   p(95)=5.83ms
+          { scenario:getUser }...........: avg=3.64ms   min=515.9µs  med=2.76ms   max=278.02ms p(90)=4.76ms   p(95)=5.77ms
+          { scenario:liaison_contact }...: avg=1.5s     min=1.5s     med=1.5s     max=1.57s    p(90)=1.5s     p(95)=1.51s
+          { scenario:liaison_match }.....: avg=1.5s     min=1.5s     med=1.5s     max=1.55s    p(90)=1.5s     p(95)=1.5s
+        http_req_failed..................: 0.00%  0 out of 48592
           { scenario:deadlines }.........: 0.00%  0 out of 99
-          { scenario:getAssociation }....: 0.00%  0 out of 25773
-          { scenario:getUser }...........: 0.00%  0 out of 68726
+          { scenario:getAssociation }....: 0.00%  0 out of 12964
+          { scenario:getUser }...........: 0.00%  0 out of 34574
           { scenario:liaison_contact }...: 0.00%  0 out of 100
           { scenario:liaison_match }.....: 0.00%  0 out of 855
-        http_reqs........................: 95553  1046.057397/s
+        http_reqs........................: 48592  531.451303/s
 
         EXECUTION
-        iteration_duration...............: avg=70ms    min=50.49ms med=51.9ms max=2.12s    p(90)=53.41ms p(95)=54.38ms
-        iterations.......................: 95553  1046.057397/s
+        iteration_duration...............: avg=137.69ms min=100.53ms med=103.27ms max=2.15s    p(90)=105.67ms p(95)=107.35ms
+        iterations.......................: 48592  531.451303/s
         vus..............................: 15     min=15         max=78
         vus_max..........................: 78     min=78         max=78
 
         NETWORK
-        data_received....................: 70 MB  763 kB/s
-        data_sent........................: 8.4 MB 92 kB/s
+        data_received....................: 35 MB  386 kB/s
+        data_sent........................: 4.3 MB 47 kB/s
 
 
 
 
-    running (01m31.3s), 00/78 VUs, 95553 complete and 0 interrupted iterations
-    deadlines       ✓ [==========] 3 VUs   01m09.4s/10m0s  99/99 iters, 33 per VU
-    getAssociation  ✓ [==========] 15 VUs  1m30s
-    getUser         ✓ [==========] 40 VUs  1m30s
-    liaison_contact ✓ [==========] 5 VUs   00m32.1s/10m0s  100/100 iters, 20 per VU
-    liaison_match   ✓ [==========] 15 VUs  1m30s
+    running (01m31.4s), 00/78 VUs, 48592 complete and 0 interrupted iterations
+    deadlines       ✓ [======================================] 3 VUs   01m09.5s/10m0s  99/99 iters, 33 per VU
+    getAssociation  ✓ [======================================] 15 VUs  1m30s
+    getUser         ✓ [======================================] 40 VUs  1m30s
+    liaison_contact ✓ [======================================] 5 VUs   00m32.2s/10m0s  100/100 iters, 20 per VU
+    liaison_match   ✓ [======================================] 15 VUs  1m30s
 
 
 ## caddy --> association
@@ -115,18 +116,16 @@ Summary: in their current states, the get_user and get_TA endpoints of associati
 ## caddy --> liaison --> kafka
 
 ### match
-- reliability: stated SLO seeks $success > 99.9%$ . Load test shows reliability of ___%
-- latency: stated SLO seeks $P95 < 1min$. Load test shows $P95 ~ ____s$
+- reliability: stated SLO seeks $success > 99.9%$ . Load test shows reliability of $100%$
+- latency: stated SLO seeks $P95 < 1min$. Load test shows $P95 ~ 1.5s$
 
 ### contact
-- reliability:stated SLO seeks $success > 99.9%$ . Load test shows reliability of ___%
-- latency:stated SLO seeks $P95 < 1min$. Load test shows $P95 ~ ____s$
+- reliability:stated SLO seeks $success > 99.9%$ . Load test shows reliability of $100%$
+- latency:stated SLO seeks $P95 < 1min$. Load test shows $P95 ~ 1.5s$
 
 
 ### Summary
-______
-
-
+In its current state, liaison hits all of its stated SLO targets. This being said, liaison currently uses artificial delay rather than true latency created by database read requests. This indicates why the P(50) through P(99) is consistently 1.5s.
 
 ## deadlines --> kafka
 
@@ -136,4 +135,15 @@ ______
 
 
 ### Summary
-In it's current state, the only notification endpoint of `deadlines-service`, `ta_admin_digest` does meet all desired SLO targets. The service is able to effectively and reliably publish jobs to kafka which are consumed, resulting in emails sent. Albeit, we are only limited to observing what is in the system itself. Since we are using Google's SMTPS server via `nodemailer`, we currently don't have a way of measuring reliability or latency once the job is given to them. Google simply responds once the job is put into the outbound queue. Furthermore, this service is still working with a simulated database retrieval (hence the extremely consistent 2s latency performance across all percentiles). Wiring this service to live SQLite database would surely change performance across the board.
+In its current state, the only notification endpoint of `deadlines-service`, `ta_admin_digest` does meet all desired SLO targets. The service is able to effectively and reliably publish jobs to kafka which are consumed, resulting in emails sent. Albeit, we are only limited to observing what is in the system itself. Since we are using Google's SMTPS server via `nodemailer`, we currently don't have a way of measuring reliability or latency once the job is given to them. Google simply responds once the job is put into the outbound queue. Furthermore, this service is still working with a simulated database retrieval (hence the extremely consistent 2s latency performance across all percentiles). Wiring this service to live SQLite database would surely change performance across the board.
+
+
+## Comparison to `sprint-3-load-test`
+
+Adding the additional instrumentation in sprints 4 and 5 did not affect the consistency in which our services meet the SLOs. Nearly all services are generously below latency SLOs (which are admittedly relaxed) while still having no failed requests inside the system when load tested. This is even after increasing load test volume to 40vus @ 90s in our main system path, and 15vus @ 90s in ancillary paths.
+
+## Interpretation: Where is the bottleneck in the system? What would you do if you had another sprint?
+
+The addition of the kafka pub/sub system between notification producers and the email adapter allowed for lower response latency. No longer waiting on the adapter's response means we are no longer waiting for Google's SMTP server's response as well.
+
+In our current system design, sending a request to an instance of association-service is how we intend users and services to access data from the database. Although, right now this is implemented as simulated database reads with artificial delay. If we had another sprint, we would wire each instance of association service to an embedded SQLite db populated with large set of artificial data. Refactoring the load balancer to hash ring that shards requests would eliminate the need to have consensus between the database instances while also balancing the load.

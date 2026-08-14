@@ -12,6 +12,25 @@
   "refresh": "5s",
   "panels": [
     {
+      "id": 3,
+      "title": "Request Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 12, "w": 12, "x": 0, "y": 12 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "expr": "sum(rate(http_requests_total[5m])) by (method, route)",
+          "legendFormat": "{{method}} {{route}}"
+        }
+      ]
+    },
+    {
       "id": 1,
       "title": "Error Rate by Instance (%)",
       "type": "timeseries",
