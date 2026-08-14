@@ -5,8 +5,8 @@ services:
       - "9000:3000" #internally, grafana listens on port 3000 by default
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=${GF_ROLL}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_PASS}
       - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/service_metrics.json
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
